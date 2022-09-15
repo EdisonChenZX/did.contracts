@@ -3,7 +3,7 @@
 namespace amax {
 
 
-void idtoken::create( const name& issuer, const int64_t& maximum_supply, const nsymbol& symbol, const string& token_uri, const name& ipowner )
+void didtoken::create( const name& issuer, const int64_t& maximum_supply, const nsymbol& symbol, const string& token_uri, const name& ipowner )
 {
    require_auth( issuer );
 
@@ -36,7 +36,7 @@ void idtoken::create( const name& issuer, const int64_t& maximum_supply, const n
    });
 }
 
-void idtoken::setnotary(const name& notary, const bool& to_add) {
+void didtoken::setnotary(const name& notary, const bool& to_add) {
    require_auth( _self );
 
    if (to_add)
@@ -47,7 +47,7 @@ void idtoken::setnotary(const name& notary, const bool& to_add) {
 
 }
 
-void idtoken::notarize(const name& notary, const uint32_t& token_id) {
+void didtoken::notarize(const name& notary, const uint32_t& token_id) {
    require_auth( notary );
    check( _gstate.notaries.find(notary) != _gstate.notaries.end(), "not authorized notary" );
 
@@ -60,7 +60,7 @@ void idtoken::notarize(const name& notary, const uint32_t& token_id) {
     });
 }
 
-void idtoken::issue( const name& to, const nasset& quantity, const string& memo )
+void didtoken::issue( const name& to, const nasset& quantity, const string& memo )
 {
     auto sym = quantity.symbol;
     check( sym.is_valid(), "invalid symbol name" );
@@ -86,7 +86,7 @@ void idtoken::issue( const name& to, const nasset& quantity, const string& memo 
     add_balance( st.issuer, quantity, st.issuer );
 }
 
-void idtoken::retire( const nasset& quantity, const string& memo )
+void didtoken::retire( const nasset& quantity, const string& memo )
 {
     auto sym = quantity.symbol;
     check( sym.is_valid(), "invalid symbol name" );
@@ -110,7 +110,7 @@ void idtoken::retire( const nasset& quantity, const string& memo )
     sub_balance( st.issuer, quantity );
 }
 
-void idtoken::transfer( const name& from, const name& to, const vector<nasset>& assets, const string& memo  )
+void didtoken::transfer( const name& from, const name& to, const vector<nasset>& assets, const string& memo  )
 {
    check( from != to, "cannot transfer to self" );
    require_auth( from );
@@ -138,7 +138,7 @@ void idtoken::transfer( const name& from, const name& to, const vector<nasset>& 
    }
 }
 
-void idtoken::sub_balance( const name& owner, const nasset& value ) {
+void didtoken::sub_balance( const name& owner, const nasset& value ) {
    auto from_acnts = account_t::idx_t( get_self(), owner.value );
 
    const auto& from = from_acnts.get( value.symbol.raw(), "no balance object found" );
@@ -149,7 +149,7 @@ void idtoken::sub_balance( const name& owner, const nasset& value ) {
       });
 }
 
-void idtoken::add_balance( const name& owner, const nasset& value, const name& ram_payer )
+void didtoken::add_balance( const name& owner, const nasset& value, const name& ram_payer )
 {
    auto to_acnts = account_t::idx_t( get_self(), owner.value );
    auto to = to_acnts.find( value.symbol.raw() );

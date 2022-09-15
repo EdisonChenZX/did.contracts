@@ -24,17 +24,17 @@ using namespace eosio;
  *
  * Similarly, the `stats` multi-index table, holds instances of `currency_stats` objects for each row, which contains information about current supply, maximum supply, and the creator account for a symbol token. The `stats` table is scoped to the token symbol.  Therefore, when one queries the `stats` table for a token symbol the result is one single entry/row corresponding to the queried symbol token if it was previously created, or nothing, otherwise.
  */
-class [[eosio::contract("did.ntoken")]] idtoken : public contract {
+class [[eosio::contract("did.ntoken")]] didtoken : public contract {
    public:
       using contract::contract;
 
-   idtoken(eosio::name receiver, eosio::name code, datastream<const char*> ds): contract(receiver, code, ds),
+   didtoken(eosio::name receiver, eosio::name code, datastream<const char*> ds): contract(receiver, code, ds),
         _global(get_self(), get_self().value)
     {
         _gstate = _global.exists() ? _global.get() : global_t{};
     }
 
-    ~idtoken() { _global.set( _gstate, get_self() ); }
+    ~didtoken() { _global.set( _gstate, get_self() ); }
 
    /**
     * @brief Allows `issuer` account to create a token in supply of `maximum_supply`. If validation is successful a new entry in statsta
@@ -69,7 +69,7 @@ class [[eosio::contract("did.ntoken")]] idtoken : public contract {
     * @return no return value.
     */
    ACTION transfer( const name& from, const name& to, const nasset& quantity, const string& memo );
-   using transfer_action = action_wrapper< "transfer"_n, &idtoken::transfer >;
+   using transfer_action = action_wrapper< "transfer"_n, &didtoken::transfer >;
 
    /**
     * @brief fragment a NFT into multiple common or unique NFT pieces
