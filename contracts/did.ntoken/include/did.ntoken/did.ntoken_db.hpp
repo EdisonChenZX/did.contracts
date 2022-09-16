@@ -112,6 +112,8 @@ TBL nstats_t {
 ///Scope: owner's account
 TBL account_t {
     nasset      balance;
+    bool        allow_send = false;
+    bool        allow_recv = false;
     bool        paused = false;   //if true, it can no longer be transferred
 
     account_t() {}

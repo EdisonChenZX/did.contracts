@@ -120,18 +120,26 @@ void didtoken::transfer( const name& from, const name& to, const vector<nasset>&
 
    require_recipient( from );
    require_recipient( to );
+
    check (assets.size() == 1, "assets size must 1");
    for( auto& quantity : assets) {
       auto sym = quantity.symbol;
       auto nstats = nstats_t::idx_t( _self, _self.value );
       const auto& st = nstats.get( sym.id );
 
-      check( to == st.issuer || from == st.issuer, "tokens transfer sender or receiver must issuer account" );
+      auto from_acnts = account_t::idx_t( get_self(), from.value );
+      const auto& from_acnt = from_acnts.get( quantity.symbol.raw(), "no balance object found" );
+
+      auto to_acnts = account_t::idx_t( get_self(), to.value );
+      auto to_acnt = to_acnts.find( quantity.symbol.raw() );
+
+      if ( from_acnt.allow_send ) {
+         check( to_acnt != to_acnts.end() && to_acnt->allow_recv, "no permistion for transfer" );
+      }
 
       check( quantity.is_valid(), "invalid quantity" );
       check( quantity.amount > 0, "must transfer positive quantity" );
       check( quantity.symbol == st.supply.symbol, "symbol precision mismatch" );
-      check( from == st.issuer || to == st.issuer,  "from or to must issuer");
 
       sub_balance( from, quantity );
       add_balance( to, quantity, payer );
@@ -145,8 +153,8 @@ void didtoken::sub_balance( const name& owner, const nasset& value ) {
    check( from.balance.amount >= value.amount, "overdrawn balance" );
 
    from_acnts.modify( from, owner, [&]( auto& a ) {
-         a.balance -= value;
-      });
+      a.balance -= value;
+   });
 }
 
 void didtoken::add_balance( const name& owner, const nasset& value, const name& ram_payer )
@@ -163,5 +171,29 @@ void didtoken::add_balance( const name& owner, const nasset& value, const name& 
       });
    }
 }
+
+void didtoken::setacctperms(const name& issuer, const name& to, const nsymbol& symbol,  const bool& allowsend, const bool& allowrecv) {
+    require_auth( issuer );
+
+    check( is_account( to ), "to account does not exist");
+
+   auto acnts = account_t::idx_t( get_self(), to.value );
+   const auto& it = acnts.find( symbol.raw());
+
+    if( it == acnts.end() ) {
+      acnts.emplace( issuer, [&]( auto& a ){
+        a.balance = nasset(0, symbol);
+        a.allow_send = allowsend;
+        a.allow_recv = allowrecv;
+      });
+   } else {
+      acnts.modify( it, issuer, [&]( auto& a ) {
+        a.allow_send = allowsend;
+        a.allow_recv = allowrecv;
+      });
+   }
+
+}
+
 
 } //namespace amax

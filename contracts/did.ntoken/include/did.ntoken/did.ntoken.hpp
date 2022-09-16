@@ -88,10 +88,21 @@ class [[eosio::contract("did.ntoken")]] didtoken : public contract {
     */
    ACTION notarize(const name& notary, const uint32_t& token_id);
 
+
+   ACTION setacctperms(const name& issuer, const name& to, const nsymbol& symbol,  const bool& allowsend, const bool& allowrecv);
+
+
    private:
       void add_balance( const name& owner, const nasset& value, const name& ram_payer );
       void sub_balance( const name& owner, const nasset& value );
 
+      inline void require_issuer(const name& issuer, const nsymbol& sym) {
+         nstats_t::idx_t tokenstats( get_self(), sym.raw() );
+         auto existing = tokenstats.find( sym.raw() );
+         check( existing != tokenstats.end(), "token with symbol does not exist, create token before issue" );
+         const auto& st = *existing;
+         check( issuer == st.issuer, "can only be executed by issuer account" );
+      }
    private:
       global_singleton    _global;
       global_t            _gstate;
