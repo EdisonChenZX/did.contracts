@@ -18,7 +18,7 @@ using namespace eosio;
 
 static constexpr name      NFT_BANK    = "did.ntoken"_n;
 static constexpr name      CNYD_BANK   = "cnyd.token"_n;
-static constexpr symbol    CNYD        = symbol(symbol_code("CNYD"), 4);
+static constexpr eosio::name active_perm{"active"_n};
 
 
 enum class err: uint8_t {
@@ -70,13 +70,13 @@ class [[eosio::contract("amax.did")]] amax_did : public contract {
 
 
    [[eosio::on_notify("amax.mtoken::transfer")]]
-   void onbuytransfer(const name& from, const name& to, const asset& quant, const string& memo);
+   void ontransfer(const name& from, const name& to, const asset& quant, const string& memo);
 
    ACTION init( const name& admin, const name& nft_contract);
 
    ACTION finishdid(const uint64_t& order_id);
 
-   ACTION cancelorder( const uint64_t& order_id );
+   // ACTION cancelorder( const uint64_t& order_id );
    
    private:
       global_singleton    _global;

@@ -6,7 +6,6 @@
 #include <eosio/system.hpp>
 #include <eosio/time.hpp>
 
-#include <did.ntoken/did.ntoken_db.hpp>
 #include <utils.hpp>
 
 #include <optional>
@@ -14,6 +13,7 @@
 #include <map>
 #include <set>
 #include <type_traits>
+#include <did.ntoken/did.ntoken.hpp>
 
 
 namespace amax {
@@ -33,9 +33,10 @@ struct aplink_farm {
 
 NTBL("global") global_t {
     name                        admin;
-    name                        ntf_contract;
+    name                        nft_contract;
     aplink_farm                 apl_farm;
-    uint64_t last_order_idx     = 0;
+    uint64_t                    last_order_idx = 0;
+    nsymbol                     did_token;
 
     EOSLIB_SERIALIZE( global_t, (admin)(nft_contract)(apl_farm)(last_order_idx) )
 };
@@ -52,7 +53,7 @@ TBL order_t {
     order_t(const uint64_t& i): id(i) {}
 
     uint64_t primary_key()const { return id; }
-    uint64_t by_maker const { return maker.value ; }
+    uint64_t by_maker() const { return maker.value ; }
 
     typedef eosio::multi_index
     < "orders"_n,  order_t,
@@ -68,9 +69,9 @@ TBL vender_info_t {
     string          vender_name;
     name            vendor_account;
     uint32_t        kyc_level;
-    asset_t         vendor_charge_quant;        //E.g. "1.000000 MUSDT"
-    asset_t         user_reward_quant;          //E.g. "10.0000 APL"
-    asset_t         user_charge_amount;         //E.g. "1.500000 MUSDT"
+    asset           vendor_charge_quant;        //E.g. "1.000000 MUSDT"
+    asset           user_reward_quant;          //E.g. "10.0000 APL"
+    asset           user_charge_amount;         //E.g. "1.500000 MUSDT"
     nsymbol         nft_id;
     name            status;
     time_point_sec  created_at;
@@ -80,12 +81,12 @@ TBL vender_info_t {
     vender_info_t(const uint64_t& i): id(i) {}
 
     uint64_t primary_key()const { return id; }
-    uint128_t by_vendor_account_and_kyc_level const { return (uint128_t) vendor_account.value << 64 | | (uint128_t)kyc_level ; }
+    uint128_t by_vendor_account_and_kyc_level() const { return (uint128_t) vendor_account.value << 64 || (uint128_t)kyc_level ; }
 
     typedef eosio::multi_index
     < "venderinfo"_n,  vender_info_t,
-        indexed_by<"venderidx"_n, const_mem_fun<vender_info_t, uint64_t, &vender_info_t::by_vendor_account_and_kyc_level> >
-    > vender_info_idx;
+        indexed_by<"venderidx"_n, const_mem_fun<vender_info_t, uint128_t, &vender_info_t::by_vendor_account_and_kyc_level> >
+    > idx_t;
 
     EOSLIB_SERIALIZE( vender_info_t, (id)(vender_name)(vendor_account)(kyc_level)
                                      (vendor_charge_quant)(user_reward_quant)(user_charge_amount)
