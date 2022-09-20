@@ -36,9 +36,9 @@ NTBL("global") global_t {
     name                        nft_contract;
     aplink_farm                 apl_farm;
     uint64_t                    last_order_idx = 0;
-    nsymbol                     did_token;
+    uint64_t                    last_vendor_id = 0;
 
-    EOSLIB_SERIALIZE( global_t, (admin)(nft_contract)(apl_farm)(last_order_idx) )
+    EOSLIB_SERIALIZE( global_t, (admin)(nft_contract)(apl_farm)(last_order_idx)(last_vendor_id) )
 };
 typedef eosio::singleton< "global"_n, global_t > global_singleton;
 
@@ -64,9 +64,9 @@ TBL order_t {
 };
 
 //Scope: nasset.symbol.id
-TBL vender_info_t {
+TBL vendor_info_t {
     uint64_t        id;                 //PK
-    string          vender_name;
+    string          vendor_name;
     name            vendor_account;
     uint32_t        kyc_level;
     asset           vendor_charge_quant;        //E.g. "1.000000 MUSDT"
@@ -77,18 +77,18 @@ TBL vender_info_t {
     time_point_sec  created_at;
     time_point_sec  updated_at;
 
-    vender_info_t() {}
-    vender_info_t(const uint64_t& i): id(i) {}
+    vendor_info_t() {}
+    vendor_info_t(const uint64_t& i): id(i) {}
 
     uint64_t primary_key()const { return id; }
     uint128_t by_vendor_account_and_kyc_level() const { return (uint128_t) vendor_account.value << 64 || (uint128_t)kyc_level ; }
 
     typedef eosio::multi_index
-    < "venderinfo"_n,  vender_info_t,
-        indexed_by<"venderidx"_n, const_mem_fun<vender_info_t, uint128_t, &vender_info_t::by_vendor_account_and_kyc_level> >
+    < "vendorinfo"_n,  vendor_info_t,
+        indexed_by<"vendoridx"_n, const_mem_fun<vendor_info_t, uint128_t, &vendor_info_t::by_vendor_account_and_kyc_level> >
     > idx_t;
 
-    EOSLIB_SERIALIZE( vender_info_t, (id)(vender_name)(vendor_account)(kyc_level)
+    EOSLIB_SERIALIZE( vendor_info_t, (id)(vendor_name)(vendor_account)(kyc_level)
                                      (vendor_charge_quant)(user_reward_quant)(user_charge_amount)
                                      (nft_id)(status)(created_at)(updated_at) )
 };

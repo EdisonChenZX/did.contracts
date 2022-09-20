@@ -27,12 +27,11 @@ using namespace std;
       return calc_precision(digit);
    }
 
-   void amax_did::init( const name& admin, const name& nft_contract, const nsymbol& did_token) {
+   void amax_did::init( const name& admin, const name& nft_contract) {
       require_auth( _self );
 
       _gstate.nft_contract       = nft_contract;
       _gstate.admin              = admin;
-      _gstate.did_token          = did_token;
    }
 
     void amax_did::ontransfer(const name& from, const name& to, const asset& quant, const string& memo) {
@@ -48,11 +47,11 @@ using namespace std;
       auto vendor_account        = name( parts[1] );
       auto kyc_level             = to_uint64( parts[2], "key_level" );
 
-      vender_info_t::idx_t vender_infos(_self, _self.value);
-      auto vender_info_idx       = vender_infos.get_index<"venderidx"_n>();
-      auto vender_info_ptr        = vender_info_idx.find((uint128_t) vendor_account.value << 64 | (uint128_t)kyc_level);
-      CHECKC( vender_info_ptr != vender_info_idx.end(), err::RECORD_NOT_FOUND, "vender info does not exist. ");
-      CHECKC( vender_info_ptr->status == vender_info_status::RUNNING, err::STATUS_ERROR, "vender status is not runnig ");
+      vendor_info_t::idx_t vendor_infos(_self, _self.value);
+      auto vendor_info_idx       = vendor_infos.get_index<"vendoridx"_n>();
+      auto vendor_info_ptr        = vendor_info_idx.find((uint128_t) vendor_account.value << 64 | (uint128_t)kyc_level);
+      CHECKC( vendor_info_ptr != vendor_info_idx.end(), err::RECORD_NOT_FOUND, "vendor info does not exist. ");
+      CHECKC( vendor_info_ptr->status == vendor_info_status::RUNNING, err::STATUS_ERROR, "vendor status is not runnig ");
 
       order_t::order_idx orders(_self, _self.value);
       auto order_idx       = orders.get_index<"makeridx"_n>();
@@ -81,10 +80,57 @@ using namespace std;
       auto order_ptr       = orders.find(order_id);
       CHECKC( order_ptr != orders.end(), err::RECORD_NOT_FOUND, "order already exist. ");
       orders.erase(*order_ptr);
-      
-      auto did_quantity = nasset(1, _gstate.did_token);
+
+      vendor_info_t::idx_t vendor_infos(_self, _self.value);
+      auto vendor_info_idx       = vendor_infos.get_index<"vendoridx"_n>();
+      auto vendor_info_ptr        = vendor_info_idx.find((uint128_t) order_ptr->vendor_account.value << 64 | (uint128_t)order_ptr->kyc_level);
+      CHECKC( vendor_info_ptr == vendor_info_idx.end(), err::RECORD_EXISTING, "vendor info already not exist. ");
+
+      auto did_quantity = nasset(1, vendor_info_ptr->nft_id);
       vector<nasset> quants = { did_quantity };
       TRANSFER_D( _gstate.nft_contract, order_ptr->maker, quants, "send did: " + to_string(order_id) );
+   }
+
+   void amax_did::addvendor(const string& vendor_name, const name& vendor_account,
+                        uint32_t& kyc_level, const asset& vendor_charge_quant,
+                        const asset& user_reward_quant, const asset& user_charge_amount,
+                        const nsymbol& nft_id ) {
+
+      CHECKC( has_auth(_self) || has_auth(_gstate.admin), err::NO_AUTH, "no auth for operate" )
+      vendor_info_t::idx_t vendor_infos(_self, _self.value);
+      auto vendor_info_idx       = vendor_infos.get_index<"vendoridx"_n>();
+      auto vendor_info_ptr        = vendor_info_idx.find((uint128_t) vendor_account.value << 64 | (uint128_t)kyc_level);
+      CHECKC( vendor_info_ptr == vendor_info_idx.end(), err::RECORD_EXISTING, "vendor info already not exist. ");
+
+      auto now                   = current_time_point();
+      _gstate.last_vendor_id ++;
+      auto last_vendor_id         = _gstate.last_vendor_id;
+      vendor_infos.emplace( _self, [&]( auto& row ) {
+         row.id 					   = last_vendor_id;
+         row.vendor_name 		   = vendor_name;
+         row.vendor_account      = vendor_account;
+         row.kyc_level           = kyc_level;
+         row.vendor_charge_quant = vendor_charge_quant;
+         row.user_reward_quant 	= user_reward_quant;
+         row.user_charge_amount  = user_charge_amount;
+         row.nft_id              = nft_id;
+         row.status			      = vendor_info_status::RUNNING;
+         row.created_at          = now;
+         row.updated_at          = now;
+      });   
+   }
+
+   void amax_did::chgvendor(const uint64_t& vendor_id, const name& status) {
+      vendor_info_t::idx_t vendor_infos(_self, _self.value);
+      auto vender_itr = vendor_infos.find( vendor_id );
+      CHECKC( vender_itr != vendor_infos.end(), err::RECORD_NOT_FOUND, "vender not found: " + to_string(vendor_id) );
+      CHECKC( vender_itr->status == status, err::STATUS_ERROR, "vender status already equal: " + to_string(vendor_id) );
+      
+      vendor_infos.modify( vender_itr, _self, [&]( auto& row ) {
+         row.status           = status;
+         row.updated_at       = time_point_sec( current_time_point() );
+      });
+
    }
 
 } //namespace amax

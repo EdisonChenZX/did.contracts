@@ -42,7 +42,7 @@ enum class err: uint8_t {
    STATUS_ERROR         = 18
 
 };
-namespace vender_info_status {
+namespace vendor_info_status {
     static constexpr eosio::name RUNNING            = "running"_n;
     static constexpr eosio::name STOP               = "stop"_n;
 };
@@ -72,9 +72,18 @@ class [[eosio::contract("amax.did")]] amax_did : public contract {
    [[eosio::on_notify("amax.mtoken::transfer")]]
    void ontransfer(const name& from, const name& to, const asset& quant, const string& memo);
 
-   ACTION init( const name& admin, const name& nft_contract, const nsymbol& did_token);
+   ACTION init( const name& admin, const name& nft_contract);
 
    ACTION finishdid(const uint64_t& order_id);
+
+   ACTION  addvendor(const string& vendor_name,
+                     const name& vendor_account,
+                     uint32_t& kyc_level,
+                     const asset& vendor_charge_quant,
+                     const asset& user_reward_quant, 
+                     const asset& user_charge_amount,
+                     const nsymbol& nft_id );
+    ACTION chgvendor(const uint64_t& vendor_id, const name& status);
 
    // ACTION cancelorder( const uint64_t& order_id );
    
