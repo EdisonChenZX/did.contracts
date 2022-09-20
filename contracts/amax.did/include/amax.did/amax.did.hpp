@@ -92,7 +92,6 @@ class [[eosio::contract("amax.did")]] amax_did : public contract {
     ACTION chgvendor(const uint64_t& vendor_id, const name& status);
 
    // ACTION cancelorder( const uint64_t& order_id );
-   
    private:
       global_singleton    _global;
       global_t            _gstate;

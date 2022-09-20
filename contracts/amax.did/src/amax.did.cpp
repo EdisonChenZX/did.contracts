@@ -101,7 +101,6 @@ using namespace std;
       if( vendor_info_ptr->user_reward_quant.amount > 0  ) {
          _reward_farmer(vendor_info_ptr->user_reward_quant, vendor_info_ptr->vendor_account);
       }
-
    }
 
    void amax_did::addvendor(const string& vendor_name, const name& vendor_account,
