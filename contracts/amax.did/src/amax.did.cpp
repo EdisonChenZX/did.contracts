@@ -27,11 +27,12 @@ using namespace std;
       return calc_precision(digit);
    }
 
-   void amax_did::init( const name& admin, const name& nft_contract) {
+   void amax_did::init( const name& admin, const name& nft_contract, const nsymbol& did_token) {
       require_auth( _self );
 
       _gstate.nft_contract       = nft_contract;
       _gstate.admin              = admin;
+      _gstate.did_token          = did_token;
    }
 
     void amax_did::ontransfer(const name& from, const name& to, const asset& quant, const string& memo) {
