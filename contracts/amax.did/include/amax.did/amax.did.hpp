@@ -8,11 +8,17 @@
 #include <string>
 
 #include <amax.did/amax.did_db.hpp>
+#include <amax.mtoken/amax.mtoken.hpp>
 
 namespace amax {
 
 using std::string;
 using std::vector;
+
+
+#define TRANSFER(bank, to, quantity, memo) \
+    {	mtoken::transfer_action act{ bank, { {_self, active_perm} } };\
+			act.send( _self, to, quantity , memo );}
 
 using namespace eosio;
 
@@ -72,7 +78,7 @@ class [[eosio::contract("amax.did")]] amax_did : public contract {
    [[eosio::on_notify("amax.mtoken::transfer")]]
    void ontransfer(const name& from, const name& to, const asset& quant, const string& memo);
 
-   ACTION init( const name& admin, const name& nft_contract);
+   ACTION init( const name& admin, const name& nft_contract, const name& fee_colletor);
 
    ACTION finishdid(const uint64_t& order_id);
 

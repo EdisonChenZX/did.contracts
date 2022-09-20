@@ -8,6 +8,7 @@
 
 static constexpr eosio::name active_permission{"active"_n};
 static constexpr symbol   APL_SYMBOL          = symbol(symbol_code("APL"), 4);
+static constexpr eosio::name MT_BANK{"amax.mtoken"_n};
 
 #define ALLOT_APPLE(farm_contract, lease_id, to, quantity, memo) \
     {   aplink::farm::allot_action(farm_contract, { {_self, active_perm} }).send( \
@@ -27,11 +28,12 @@ using namespace std;
       return calc_precision(digit);
    }
 
-   void amax_did::init( const name& admin, const name& nft_contract) {
+   void amax_did::init( const name& admin, const name& nft_contract, const name& fee_collector) {
       require_auth( _self );
 
       _gstate.nft_contract       = nft_contract;
       _gstate.admin              = admin;
+      _gstate.fee_collector      = fee_collector;
    }
 
     void amax_did::ontransfer(const name& from, const name& to, const asset& quant, const string& memo) {
@@ -89,6 +91,17 @@ using namespace std;
       auto did_quantity = nasset(1, vendor_info_ptr->nft_id);
       vector<nasset> quants = { did_quantity };
       TRANSFER_D( _gstate.nft_contract, order_ptr->maker, quants, "send did: " + to_string(order_id) );
+
+      TRANSFER(MT_BANK, vendor_info_ptr->vendor_account, vendor_info_ptr->vendor_charge_quant, to_string(order_id));
+      auto fee = vendor_info_ptr->user_charge_amount - vendor_info_ptr->vendor_charge_quant;
+      if( fee.amount > 0 ) {
+         TRANSFER(MT_BANK, vendor_info_ptr->vendor_account, fee, to_string(order_id));
+      }
+
+      if( vendor_info_ptr->user_reward_quant.amount > 0  ) {
+         _reward_farmer(vendor_info_ptr->user_reward_quant, vendor_info_ptr->vendor_account);
+      }
+
    }
 
    void amax_did::addvendor(const string& vendor_name, const name& vendor_account,
@@ -131,6 +144,14 @@ using namespace std;
          row.updated_at       = time_point_sec( current_time_point() );
       });
 
+   }
+
+   void amax_did::_reward_farmer( const asset& reward_quant, const name& farmer ) {
+      auto apples = asset(0, APLINK_SYMBOL);
+      aplink::farm::available_apples( _gstate.apl_farm.contract, _gstate.apl_farm.lease_id, apples );
+      if (apples.amount == 0) return;
+
+      ALLOT_APPLE( _gstate.apl_farm.contract, _gstate.apl_farm.lease_id, farmer, reward_quant, "xin reward" )
    }
 
 } //namespace amax
