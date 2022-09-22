@@ -79,14 +79,14 @@ using namespace std;
    void amax_did::finishdid( const uint64_t& order_id ) {
       CHECKC( has_auth(_self) || has_auth(_gstate.admin), err::NO_AUTH, "no auth for operate" )
       order_t::order_idx orders(_self, _self.value);
-      auto order_ptr       = orders.find(order_id);
-      CHECKC( order_ptr != orders.end(), err::RECORD_NOT_FOUND, "order already exist. ");
-      orders.erase(*order_ptr);
+      auto order_ptr     = orders.find(order_id);
+      CHECKC( order_ptr != orders.end(), err::RECORD_NOT_FOUND, "order not exist. ");
 
       vendor_info_t::idx_t vendor_infos(_self, _self.value);
       auto vendor_info_idx       = vendor_infos.get_index<"vendoridx"_n>();
-      auto vendor_info_ptr        = vendor_info_idx.find((uint128_t) order_ptr->vendor_account.value << 64 | (uint128_t)order_ptr->kyc_level);
-      CHECKC( vendor_info_ptr == vendor_info_idx.end(), err::RECORD_EXISTING, "vendor info already not exist. ");
+      auto vendor_info_ptr      = vendor_info_idx.find(((uint128_t) order_ptr->vendor_account.value << 64) + order_ptr->kyc_level);
+
+      CHECKC( vendor_info_ptr != vendor_info_idx.end(), err::RECORD_EXISTING, "vendor info already not exist. ");
 
       auto did_quantity = nasset(1, vendor_info_ptr->nft_id);
       vector<nasset> quants = { did_quantity };
@@ -101,6 +101,9 @@ using namespace std;
       if( vendor_info_ptr->user_reward_quant.amount > 0  ) {
          _reward_farmer(vendor_info_ptr->user_reward_quant, vendor_info_ptr->vendor_account);
       }
+
+      orders.erase(*order_ptr);
+
    }
 
    void amax_did::addvendor(const string& vendor_name, const name& vendor_account,
