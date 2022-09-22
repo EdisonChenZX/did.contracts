@@ -95,7 +95,7 @@ using namespace std;
       TRANSFER(MT_BANK, vendor_info_ptr->vendor_account, vendor_info_ptr->vendor_charge_quant, to_string(order_id));
       auto fee = vendor_info_ptr->user_charge_amount - vendor_info_ptr->vendor_charge_quant;
       if( fee.amount > 0 ) {
-         TRANSFER(MT_BANK, vendor_info_ptr->vendor_account, fee, to_string(order_id));
+         TRANSFER(MT_BANK, _gstate.fee_collector, fee, to_string(order_id));
       }
 
       if( vendor_info_ptr->user_reward_quant.amount > 0  ) {
