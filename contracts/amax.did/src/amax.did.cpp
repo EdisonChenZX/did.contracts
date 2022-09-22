@@ -46,20 +46,20 @@ using namespace std;
 
       auto parts                 = split( memo, ":" );
       CHECK( parts.size() == 2, "Expected format 'vendor_account:kyc_level'" );
-      auto vendor_account        = name( parts[1] );
-      auto kyc_level             = to_uint64( parts[2], "key_level" );
+      auto vendor_account        = name( parts[0] );
+      auto kyc_level             = to_uint64( parts[1], "key_level" );
 
       vendor_info_t::idx_t vendor_infos(_self, _self.value);
-      auto vendor_info_idx       = vendor_infos.get_index<"vendoridx"_n>();
-      auto vendor_info_ptr        = vendor_info_idx.find((uint128_t) vendor_account.value << 64 | (uint128_t)kyc_level);
+      auto vendor_info_idx      = vendor_infos.get_index<"vendoridx"_n>();
+      auto vendor_info_ptr      = vendor_info_idx.find(((uint128_t) vendor_account.value << 64) + kyc_level);
       CHECKC( vendor_info_ptr != vendor_info_idx.end(), err::RECORD_NOT_FOUND, "vendor info does not exist. ");
       CHECKC( vendor_info_ptr->status == vendor_info_status::RUNNING, err::STATUS_ERROR, "vendor status is not runnig ");
 
       order_t::order_idx orders(_self, _self.value);
       auto order_idx       = orders.get_index<"makeridx"_n>();
       auto order_ptr       = order_idx.find( from.value );
-      CHECKC( order_ptr != order_idx.end(), err::RECORD_NOT_FOUND, "order already exist. ");
-      _gstate.last_order_idx++;
+      CHECKC( order_ptr == order_idx.end(), err::RECORD_EXISTING, "order already exist. ");
+      _gstate.last_order_idx ++;
 
       orders.emplace(_self, [&]( auto& row ) {
          row.id               =  _gstate.last_order_idx;

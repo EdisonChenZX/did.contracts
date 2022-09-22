@@ -82,7 +82,7 @@ TBL vendor_info_t {
     vendor_info_t(const uint64_t& i): id(i) {}
 
     uint64_t primary_key()const { return id; }
-    uint128_t by_vendor_account_and_kyc_level() const { return (uint128_t) vendor_account.value << 64 || (uint128_t)kyc_level ; }
+    uint128_t by_vendor_account_and_kyc_level() const { return ((uint128_t) vendor_account.value << 64) + kyc_level ; }
 
     typedef eosio::multi_index
     < "vendorinfo"_n,  vendor_info_t,
