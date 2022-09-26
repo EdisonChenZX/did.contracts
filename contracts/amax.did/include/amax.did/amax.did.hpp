@@ -82,6 +82,8 @@ class [[eosio::contract("amax.did")]] amax_did : public contract {
 
    ACTION finishdid(const uint64_t& order_id);
 
+   ACTION faildid(const  uint64_t& order_id, const string& reason);
+
    ACTION  addvendor(const string& vendor_name,
                      const name& vendor_account,
                      uint32_t& kyc_level,
@@ -91,7 +93,18 @@ class [[eosio::contract("amax.did")]] amax_did : public contract {
                      const nsymbol& nft_id );
     ACTION chgvendor(const uint64_t& vendor_id, const name& status);
 
-   // ACTION cancelorder( const uint64_t& order_id );
+
+    ACTION auditlog( 
+                     const name& taker,
+                     const string& vendor_name,
+                     const name& vendor_account,
+                     uint32_t& kyc_level,
+                     const asset& vendor_charge_quant,
+                     const name& status,
+                     const time_point&   created_at);
+
+    using auditlog_action = eosio::action_wrapper<"auditlog"_n, &amax_did::auditlog>;
+
    private:
       global_singleton    _global;
       global_t            _gstate;
@@ -99,5 +112,15 @@ class [[eosio::contract("amax.did")]] amax_did : public contract {
    private:
 
       void _reward_farmer( const asset& fee, const name& farmer );
+
+      void _on_audit_log(
+                     const name& maker,
+                     const string& vendor_name,
+                     const name& vendor_account,
+                     const uint32_t& kyc_level,
+                     const asset& user_charge_amount,
+                     const name& status,
+                     const time_point&   created_at
+      );
 };
 } //namespace amax

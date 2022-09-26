@@ -37,6 +37,7 @@ using namespace std;
    }
 
     void amax_did::ontransfer(const name& from, const name& to, const asset& quant, const string& memo) {
+
       if (from == get_self() || to != get_self()) return;
 
       CHECKC( from != to, err::ACCOUNT_INVALID, "cannot transfer to self" );
@@ -102,8 +103,37 @@ using namespace std;
          _reward_farmer(vendor_info_ptr->user_reward_quant, vendor_info_ptr->vendor_account);
       }
 
+      _on_audit_log(
+                  order_ptr->maker,
+                  vendor_info_ptr->vendor_name,
+                  order_ptr->vendor_account,
+                  order_ptr->kyc_level,
+                  vendor_info_ptr->user_charge_amount,
+                  "success"_n,
+                  current_time_point()
+                  );
       orders.erase(*order_ptr);
 
+   }
+
+    void amax_did::faildid( const uint64_t& order_id, const string& reason) {
+      CHECKC( has_auth(_self) || has_auth(_gstate.admin), err::NO_AUTH, "no auth for operate" )
+      order_t::order_idx orders(_self, _self.value);
+      auto order_ptr     = orders.find(order_id);
+      CHECKC( order_ptr != orders.end(), err::RECORD_NOT_FOUND, "order not exist. ");
+
+      vendor_info_t::idx_t vendor_infos(_self, _self.value);
+      auto vendor_info_idx       = vendor_infos.get_index<"vendoridx"_n>();
+      auto vendor_info_ptr      = vendor_info_idx.find(((uint128_t) order_ptr->vendor_account.value << 64) + order_ptr->kyc_level);
+
+      CHECKC( vendor_info_ptr != vendor_info_idx.end(), err::RECORD_EXISTING, "vendor info already not exist. ");
+
+      TRANSFER(MT_BANK, vendor_info_ptr->vendor_account, vendor_info_ptr->vendor_charge_quant, to_string(order_id));
+      auto fee = vendor_info_ptr->user_charge_amount - vendor_info_ptr->vendor_charge_quant;
+      if( fee.amount > 0 ) {
+         TRANSFER(MT_BANK, _gstate.fee_collector, fee, to_string(order_id));
+      }
+      orders.erase(*order_ptr);
    }
 
    void amax_did::addvendor(const string& vendor_name, const name& vendor_account,
@@ -155,5 +185,31 @@ using namespace std;
 
       ALLOT_APPLE( _gstate.apl_farm.contract, _gstate.apl_farm.lease_id, farmer, reward_quant, "xin reward" )
    }
+
+   void amax_did::auditlog( 
+                     const name& taker,
+                     const string& vendor_name,
+                     const name& vendor_account,
+                     uint32_t& kyc_level,
+                     const asset& vendor_charge_quant,
+                     const name& status,
+                     const time_point&   created_at) {
+      require_auth(get_self());
+      require_recipient(taker);
+
+    }
+
+    void amax_did::_on_audit_log(
+                     const name& maker,
+                     const string& vendor_name,
+                     const name& vendor_account,
+                     const uint32_t& kyc_level,
+                     const asset& user_charge_amount,
+                     const name& status,
+                     const time_point&   created_at
+      ) {
+            amax_did::auditlog_action act{ _self, { {_self, active_permission} } };
+            act.send( maker, vendor_name, vendor_account, kyc_level, user_charge_amount, status, created_at   );
+      }
 
 } //namespace amax
