@@ -80,7 +80,7 @@ class [[eosio::contract("amax.did")]] amax_did : public contract {
 
    ACTION init( const name& admin, const name& nft_contract, const name& fee_colletor);
 
-   ACTION finishdid(const uint64_t& order_id);
+   ACTION finishdid(const uint64_t& order_id, const string& msg);
 
    ACTION faildid(const  uint64_t& order_id, const string& reason);
 
@@ -101,6 +101,7 @@ class [[eosio::contract("amax.did")]] amax_did : public contract {
                      uint32_t& kyc_level,
                      const asset& vendor_charge_quant,
                      const name& status,
+                     const string& msg,
                      const time_point&   created_at);
 
     using auditlog_action = eosio::action_wrapper<"auditlog"_n, &amax_did::auditlog>;
@@ -120,6 +121,7 @@ class [[eosio::contract("amax.did")]] amax_did : public contract {
                      const uint32_t& kyc_level,
                      const asset& user_charge_amount,
                      const name& status,
+                     const string& msg,
                      const time_point&   created_at
       );
 };

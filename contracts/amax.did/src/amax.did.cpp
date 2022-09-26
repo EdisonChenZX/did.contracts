@@ -77,7 +77,7 @@ using namespace std;
     * @param order_id
     *
     */
-   void amax_did::finishdid( const uint64_t& order_id ) {
+   void amax_did::finishdid( const uint64_t& order_id, const string& msg ) {
       CHECKC( has_auth(_self) || has_auth(_gstate.admin), err::NO_AUTH, "no auth for operate" )
       order_t::order_idx orders(_self, _self.value);
       auto order_ptr     = orders.find(order_id);
@@ -110,6 +110,7 @@ using namespace std;
                   order_ptr->kyc_level,
                   vendor_info_ptr->user_charge_amount,
                   "successed"_n,
+                  msg,
                   current_time_point()
                   );
       orders.erase(*order_ptr);
@@ -139,6 +140,7 @@ using namespace std;
                   order_ptr->kyc_level,
                   vendor_info_ptr->user_charge_amount,
                   "failed"_n,
+                  reason,
                   current_time_point()
                   );
       orders.erase(*order_ptr);
@@ -201,6 +203,7 @@ using namespace std;
                      uint32_t& kyc_level,
                      const asset& vendor_charge_quant,
                      const name& status,
+                     const string& msg,
                      const time_point&   created_at) {
       require_auth(get_self());
       require_recipient(taker);
@@ -214,10 +217,11 @@ using namespace std;
                      const uint32_t& kyc_level,
                      const asset& user_charge_amount,
                      const name& status,
+                     const string& msg,
                      const time_point&   created_at
       ) {
             amax_did::auditlog_action act{ _self, { {_self, active_permission} } };
-            act.send( maker, vendor_name, vendor_account, kyc_level, user_charge_amount, status, created_at   );
+            act.send( maker, vendor_name, vendor_account, kyc_level, user_charge_amount, status, msg, created_at   );
       }
 
 } //namespace amax
