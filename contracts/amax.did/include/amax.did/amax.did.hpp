@@ -95,6 +95,7 @@ class [[eosio::contract("amax.did")]] amax_did : public contract {
 
 
     ACTION auditlog( 
+                     const uint64_t& order_id,
                      const name& taker,
                      const string& vendor_name,
                      const name& vendor_account,
@@ -102,7 +103,7 @@ class [[eosio::contract("amax.did")]] amax_did : public contract {
                      const asset& vendor_charge_quant,
                      const name& status,
                      const string& msg,
-                     const time_point&   created_at);
+                     const time_point& created_at);
 
     using auditlog_action = eosio::action_wrapper<"auditlog"_n, &amax_did::auditlog>;
 
@@ -115,6 +116,7 @@ class [[eosio::contract("amax.did")]] amax_did : public contract {
       void _reward_farmer( const asset& fee, const name& farmer );
 
       void _on_audit_log(
+                     const uint64_t& order_id,
                      const name& maker,
                      const string& vendor_name,
                      const name& vendor_account,

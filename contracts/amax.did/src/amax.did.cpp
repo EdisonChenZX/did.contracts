@@ -104,6 +104,7 @@ using namespace std;
       }
 
       _on_audit_log(
+                  order_ptr->id,
                   order_ptr->maker,
                   vendor_info_ptr->vendor_name,
                   order_ptr->vendor_account,
@@ -134,6 +135,7 @@ using namespace std;
          TRANSFER(MT_BANK, _gstate.fee_collector, fee, to_string(order_id));
       }
       _on_audit_log(
+                  order_ptr->id,
                   order_ptr->maker,
                   vendor_info_ptr->vendor_name,
                   order_ptr->vendor_account,
@@ -197,6 +199,7 @@ using namespace std;
    }
 
    void amax_did::auditlog( 
+                     const uint64_t& order_id,
                      const name& taker,
                      const string& vendor_name,
                      const name& vendor_account,
@@ -211,6 +214,7 @@ using namespace std;
     }
 
     void amax_did::_on_audit_log(
+                     const uint64_t& order_id,
                      const name& maker,
                      const string& vendor_name,
                      const name& vendor_account,
@@ -221,7 +225,7 @@ using namespace std;
                      const time_point&   created_at
       ) {
             amax_did::auditlog_action act{ _self, { {_self, active_permission} } };
-            act.send( maker, vendor_name, vendor_account, kyc_level, user_charge_amount, status, msg, created_at   );
+            act.send(order_id, maker, vendor_name, vendor_account, kyc_level, user_charge_amount, status, msg, created_at   );
       }
 
 } //namespace amax
