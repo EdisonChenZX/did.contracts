@@ -109,11 +109,10 @@ using namespace std;
                   order_ptr->vendor_account,
                   order_ptr->kyc_level,
                   vendor_info_ptr->user_charge_amount,
-                  "success"_n,
+                  "successed"_n,
                   current_time_point()
                   );
       orders.erase(*order_ptr);
-
    }
 
     void amax_did::faildid( const uint64_t& order_id, const string& reason) {
@@ -133,6 +132,15 @@ using namespace std;
       if( fee.amount > 0 ) {
          TRANSFER(MT_BANK, _gstate.fee_collector, fee, to_string(order_id));
       }
+      _on_audit_log(
+                  order_ptr->maker,
+                  vendor_info_ptr->vendor_name,
+                  order_ptr->vendor_account,
+                  order_ptr->kyc_level,
+                  vendor_info_ptr->user_charge_amount,
+                  "failed"_n,
+                  current_time_point()
+                  );
       orders.erase(*order_ptr);
    }
 
