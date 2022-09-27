@@ -187,6 +187,9 @@ using namespace std;
    }
 
    void amax_did::chgvendor(const uint64_t& vendor_id, const name& status) {
+
+      CHECKC( has_auth(_self) || has_auth(_gstate.admin), err::NO_AUTH, "no auth for operate" )
+
       vendor_info_t::idx_t vendor_infos(_self, _self.value);
       auto vender_itr = vendor_infos.find( vendor_id );
       CHECKC( vender_itr != vendor_infos.end(), err::RECORD_NOT_FOUND, "vender not found: " + to_string(vendor_id) );
