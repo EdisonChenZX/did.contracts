@@ -31,6 +31,9 @@ using namespace std;
    void amax_did::init( const name& admin, const name& nft_contract, const name& fee_collector) {
       require_auth( _self );
 
+      CHECKC( is_account( admin ), err::PARAM_ERROR, "admin account does not exist");
+      CHECKC( is_account( fee_collector ), err::PARAM_ERROR, "fee_collector account does not exist");
+
       _gstate.nft_contract       = nft_contract;
       _gstate.admin              = admin;
       _gstate.fee_collector      = fee_collector;
@@ -55,6 +58,7 @@ using namespace std;
       auto vendor_info_ptr      = vendor_info_idx.find(((uint128_t) vendor_account.value << 64) + kyc_level);
       CHECKC( vendor_info_ptr != vendor_info_idx.end(), err::RECORD_NOT_FOUND, "vendor info does not exist. ");
       CHECKC( vendor_info_ptr->status == vendor_info_status::RUNNING, err::STATUS_ERROR, "vendor status is not runnig ");
+      CHECKC( vendor_info_ptr->user_charge_amount == quant, err::PARAM_ERROR, "transfer amount error");
 
       order_t::order_idx orders(_self, _self.value);
       auto order_idx       = orders.get_index<"makeridx"_n>();
@@ -154,9 +158,14 @@ using namespace std;
                         const nsymbol& nft_id ) {
 
       CHECKC( has_auth(_self) || has_auth(_gstate.admin), err::NO_AUTH, "no auth for operate" )
+      CHECKC( vendor_charge_quant.amount > 0, err::PARAM_ERROR, "vendor_charge_quant amount inpostive");
+      CHECKC( user_reward_quant.amount > 0, err::PARAM_ERROR, "user_reward_quant amount inpostive");
+      CHECKC( user_charge_amount.amount > 0, err::PARAM_ERROR, "user_charge_amount amount does not exist");
+      
+
       vendor_info_t::idx_t vendor_infos(_self, _self.value);
-      auto vendor_info_idx       = vendor_infos.get_index<"vendoridx"_n>();
-      auto vendor_info_ptr        = vendor_info_idx.find((uint128_t) vendor_account.value << 64 | (uint128_t)kyc_level);
+      auto vendor_info_idx    = vendor_infos.get_index<"vendoridx"_n>();
+      auto vendor_info_ptr    = vendor_info_idx.find((uint128_t) vendor_account.value << 64 | (uint128_t)kyc_level);
       CHECKC( vendor_info_ptr == vendor_info_idx.end(), err::RECORD_EXISTING, "vendor info already not exist. ");
 
       auto now                   = current_time_point();
