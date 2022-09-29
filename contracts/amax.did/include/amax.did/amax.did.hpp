@@ -23,7 +23,6 @@ using std::vector;
 using namespace eosio;
 
 static constexpr name      NFT_BANK    = "did.ntoken"_n;
-static constexpr name      CNYD_BANK   = "cnyd.token"_n;
 static constexpr eosio::name active_perm{"active"_n};
 
 
