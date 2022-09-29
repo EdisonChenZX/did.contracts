@@ -49,7 +49,7 @@ using namespace std;
       CHECKC( memo != "", err::MEMO_FORMAT_ERROR, "empty memo!" )
 
       auto parts                 = split( memo, ":" );
-      CHECK( parts.size() == 2, "Expected format 'vendor_account:kyc_level'" );
+      CHECK( parts.size() == 3, "Expected format 'vendor_account:kyc_level:md5'" );
       auto vendor_account        = name( parts[0] );
       auto kyc_level             = to_uint64( parts[1], "key_level" );
 
@@ -71,6 +71,7 @@ using namespace std;
          row.maker            = from;
          row.vendor_account   = vendor_account;
          row.kyc_level        = kyc_level;
+         row.secret_md5       = parts[2];
          row.created_at       = time_point_sec( current_time_point() );
       });
    }

@@ -48,6 +48,7 @@ TBL order_t {
     name            maker;
     name            vendor_account;
     uint32_t        kyc_level;
+    string          secret_md5;
     time_point_sec  created_at;
 
     order_t() {}
@@ -61,7 +62,7 @@ TBL order_t {
         indexed_by<"makeridx"_n,     const_mem_fun<order_t, uint64_t, &order_t::by_maker> >
     > order_idx;
 
-    EOSLIB_SERIALIZE( order_t, (id)(maker)(vendor_account)(kyc_level)(created_at) )
+    EOSLIB_SERIALIZE( order_t, (id)(maker)(vendor_account)(kyc_level)(secret_md5)(created_at) )
 };
 
 //Scope: nasset.symbol.id
