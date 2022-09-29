@@ -121,7 +121,7 @@ TBL account_t {
 
     uint64_t primary_key()const { return balance.symbol.raw(); }
 
-    EOSLIB_SERIALIZE(account_t, (balance)(paused) )
+    EOSLIB_SERIALIZE(account_t, (balance)(allow_send)(allow_recv)(paused) )
 
     typedef eosio::multi_index< "accounts"_n, account_t > idx_t;
 };
