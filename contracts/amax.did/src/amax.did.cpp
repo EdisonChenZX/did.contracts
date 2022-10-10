@@ -194,7 +194,7 @@ using namespace std;
       vendor_info_t::idx_t vendor_infos(_self, _self.value);
       auto vender_itr = vendor_infos.find( vendor_id );
       CHECKC( vender_itr != vendor_infos.end(), err::RECORD_NOT_FOUND, "vender not found: " + to_string(vendor_id) );
-      CHECKC( vender_itr->status == status, err::STATUS_ERROR, "vender status already equal: " + to_string(vendor_id) );
+      CHECKC( vender_itr->status != status, err::STATUS_ERROR, "vender status already equal: " + to_string(vendor_id) );
       
       vendor_infos.modify( vender_itr, _self, [&]( auto& row ) {
          row.status           = status;
