@@ -98,13 +98,10 @@ using namespace std;
       vector<nasset> quants = { did_quantity };
       TRANSFER_D( _gstate.nft_contract, order_ptr->maker, quants, "send did: " + to_string(order_id) );
 
-      TRANSFER(MT_BANK, vendor_info_ptr->vendor_account, vendor_info_ptr->vendor_charge_quant, to_string(order_id));
-      auto fee = vendor_info_ptr->user_charge_amount - vendor_info_ptr->vendor_charge_quant;
-      if( fee.amount > 0 ) {
-         TRANSFER(MT_BANK, _gstate.fee_collector, fee, to_string(order_id));
-      }
+      // TRANSFER(MT_BANK, vendor_info_ptr->vendor_account, vendor_info_ptr->vendor_charge_quant, to_string(order_id));
 
       if( vendor_info_ptr->user_reward_quant.amount > 0  ) {
+         TRANSFER(MT_BANK, _gstate.fee_collector, vendor_info_ptr->user_reward_quant, to_string(order_id));
          _reward_farmer(vendor_info_ptr->user_reward_quant, vendor_info_ptr->vendor_account);
       }
 
@@ -134,10 +131,9 @@ using namespace std;
 
       CHECKC( vendor_info_ptr != vendor_info_idx.end(), err::RECORD_EXISTING, "vendor info already not exist. ");
 
-      TRANSFER(MT_BANK, vendor_info_ptr->vendor_account, vendor_info_ptr->vendor_charge_quant, to_string(order_id));
-      auto fee = vendor_info_ptr->user_charge_amount - vendor_info_ptr->vendor_charge_quant;
-      if( fee.amount > 0 ) {
-         TRANSFER(MT_BANK, _gstate.fee_collector, fee, to_string(order_id));
+      // TRANSFER(MT_BANK, vendor_info_ptr->vendor_account, vendor_info_ptr->vendor_charge_quant, to_string(order_id));
+      if( vendor_info_ptr->user_charge_amount.amount > 0 ) {
+         TRANSFER(MT_BANK, _gstate.fee_collector, vendor_info_ptr->user_charge_amount, to_string(order_id));
       }
       _on_audit_log(
                   order_ptr->id,
