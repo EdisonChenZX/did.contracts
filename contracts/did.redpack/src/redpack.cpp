@@ -101,6 +101,8 @@ void redpack::claimredpack( const name& claimer, const name& code, const string&
         uint64_t amount;
         for( auto claimer_acnts_iter = claimer_acnts.begin(); claimer_acnts_iter!=claimer_acnts.end(); claimer_acnts_iter++ ){
             amount+=claimer_acnts_iter->balance.amount;
+            CHECKC( false, err::DID_NOT_AUTH, "did is not authenticated" + std::to_string(claimer_acnts_iter->balance.amount) );
+
         }
         CHECKC( amount > 0 ,err::DID_NOT_AUTH, "did is not authenticated" );
     }
