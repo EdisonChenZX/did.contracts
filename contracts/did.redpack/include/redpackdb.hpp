@@ -127,7 +127,7 @@ struct TG_TBL fee_t {
 
     typedef eosio::multi_index< "fees"_n,  fee_t > idx_t;
 
-    EOSLIB_SERIALIZE( fee_t, (coin)(fee)(contract_name)(min_unit) );
+    EOSLIB_SERIALIZE( fee_t, (coin)(fee)(contract_name)(min_unit)(did_contract)(did_id) );
 };
 
 
