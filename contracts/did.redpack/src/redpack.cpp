@@ -95,14 +95,14 @@ void redpack::claimredpack( const name& claimer, const name& code, const string&
 
     fee_t fee_info(redpack_itr->total_quantity.symbol);
     CHECKC( _db.get(fee_info), err::FEE_NOT_FOUND, "fee not found" );
-
+    int64_t iden = 0;
     if((redpack_type)redpack_itr->type == redpack_type::DID_RANDOM || (redpack_type)redpack_itr->type == redpack_type::DID_MEAN){
         auto claimer_acnts=amax::account_t::idx_t( fee_info.did_contract, claimer.value );
         int64_t amount;
         for( auto claimer_acnts_iter = claimer_acnts.begin(); claimer_acnts_iter!=claimer_acnts.end(); claimer_acnts_iter++ ){
             amount = amount + claimer_acnts_iter->balance.amount;
         }
-        CHECKC( amount > 0 ,err::DID_NOT_AUTH, "did is not authenticated" );
+        CHECKC( amount > iden,err::DID_NOT_AUTH, "did is not authenticated" );
     }
 
     claim_t::idx_t claim_tbl(_self, _self.value);
