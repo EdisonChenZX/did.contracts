@@ -47,8 +47,12 @@ void redpack::ontransfer( name from, name to, asset quantity, string memo )
     auto count = stoi(string(parts[1]));
 
     auto type = stoi(string(parts[2]));
-    CHECKC( (redpack_type)type == redpack_type::RANDOM || (redpack_type)type == redpack_type::MEAN, err::TYPE_INVALID, "redpack type invalid" );
-
+    CHECKC( (redpack_type)redpack_itr->type == redpack_type::RANDOM || 
+            (redpack_type)redpack_itr->type == redpack_type::MEAN || 
+            (redpack_type)redpack_itr->type == redpack_type::DID_RANDOM || 
+            (redpack_type)redpack_itr->type == redpack_type::DID_MEAN, 
+            err::TYPE_INVALID, "redpack type invalid" );
+    
     auto fee_info = fee_t(quantity.symbol);
     CHECKC( _db.get(fee_info), err::FEE_NOT_FOUND, "fee not found" );
 
@@ -88,7 +92,7 @@ void redpack::claimredpack( const name& claimer, const name& code, const string&
     CHECKC( redpack_itr != redpack_index.end(), err::RECORD_NO_FOUND, "redpack not found" );
     CHECKC( redpack_itr->pw_hash == pwhash, err::PWHASH_INVALID, "incorrect password" );
     CHECKC( redpack_itr->status == redpack_status::CREATED, err::EXPIRED, "redpack has expired" );
-    CHECKC( (redpack_type)redpack_itr->type == redpack_type::RANDOM || (redpack_type)redpack_itr->type == redpack_type::MEAN, err::TYPE_INVALID, "redpack type invalid" );
+
     if((redpack_type)redpack_itr->type == redpack_type::DID_RANDOM || (redpack_type)redpack_itr->type == redpack_type::DID_MEAN){
         auto claimer_acnts=amax::account_t::idx_t( get_self(), claimer.value );
         uint64_t amount;
