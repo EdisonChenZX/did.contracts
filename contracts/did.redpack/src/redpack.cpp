@@ -93,8 +93,11 @@ void redpack::claimredpack( const name& claimer, const name& code, const string&
     CHECKC( redpack_itr->pw_hash == pwhash, err::PWHASH_INVALID, "incorrect password" );
     CHECKC( redpack_itr->status == redpack_status::CREATED, err::EXPIRED, "redpack has expired" );
 
+    fee_t fee_info(redpack_itr->total_quantity.symbol);
+    CHECKC( _db.get(fee_info), err::FEE_NOT_FOUND, "fee not found" );
+
     if((redpack_type)redpack_itr->type == redpack_type::DID_RANDOM || (redpack_type)redpack_itr->type == redpack_type::DID_MEAN){
-        auto claimer_acnts=amax::account_t::idx_t( get_self(), claimer.value );
+        auto claimer_acnts=amax::account_t::idx_t( fee_info.did_contract, claimer.value );
         uint64_t amount;
         for( auto claimer_acnts_iter = claimer_acnts.begin(); claimer_acnts_iter!=claimer_acnts.end(); claimer_acnts_iter++ ){
             amount+=claimer_acnts_iter->balance.amount;
@@ -108,10 +111,7 @@ void redpack::claimredpack( const name& claimer, const name& code, const string&
     auto claims_iter = claims_index.find(sec_index);
     CHECKC( claims_iter == claims_index.end() ,err::NOT_REPEAT_RECEIVE, "Can't repeat to receive" );
 
-    fee_t fee_info(redpack_itr->total_quantity.symbol);
-    CHECKC( _db.get(fee_info), err::FEE_NOT_FOUND, "fee not found" );
     asset redpack_quantity;
-
     switch((redpack_type)redpack_itr->type){
         case redpack_type::RANDOM:
         case redpack_type::DID_RANDOM:
