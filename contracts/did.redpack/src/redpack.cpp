@@ -164,8 +164,9 @@ void redpack::cancel( const uint64_t& pack_id )
     }
 }
 
-void redpack::addfee( const asset& fee, const name& contract, const uint16_t& min_unit)
-{
+void redpack::addfee( const asset& fee, const name& contract, const uint16_t& min_unit,
+                        const name& did_contract, const uint64_t& did_id)
+{    
     require_auth( _self );
     CHECKC( fee.amount >= 0, err::FEE_NOT_POSITIVE, "fee must be positive" );
     CHECKC( get_precision(fee) >= power10(min_unit), err::MIN_UNIT_INVALID, "min unit not greater than coin precision" );
@@ -174,7 +175,9 @@ void redpack::addfee( const asset& fee, const name& contract, const uint16_t& mi
     fee_info.fee = fee;
     fee_info.contract_name = contract;
     fee_info.min_unit = min_unit;
-    _db.set( fee_info );
+    fee_info.did_contract = did_contract;
+    fee_info.did_id = did_id;
+    _db.set( fee_info, _self );
 }
 
 void redpack::delfee( const symbol& coin )

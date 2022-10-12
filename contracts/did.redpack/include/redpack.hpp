@@ -66,7 +66,8 @@ public:
 
     [[eosio::action]] void cancel( const uint64_t& packid );
 
-    [[eosio::action]] void addfee( const asset& fee, const name& contract, const uint16_t& min_unit);
+    [[eosio::action]] void addfee( const asset& fee, const name& contract, const uint16_t& min_unit,
+                            const name& did_contract, const uint64_t& did_id);
 
     [[eosio::action]] void delfee( const symbol& coin );
 
