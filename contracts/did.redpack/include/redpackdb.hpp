@@ -29,8 +29,8 @@ static constexpr uint32_t MAX_TITLE_SIZE        = 64;
 
 namespace wasm { namespace db {
 
-#define TG_TBL [[eosio::table, eosio::contract("xdaoredpackx")]]
-#define TG_TBL_NAME(name) [[eosio::table(name), eosio::contract("xdaoredpackx")]]
+#define TG_TBL [[eosio::table, eosio::contract("did.redpack")]]
+#define TG_TBL_NAME(name) [[eosio::table(name), eosio::contract("did.redpack")]]
 
 struct TG_TBL_NAME("global") global_t {
     name tg_admin;
