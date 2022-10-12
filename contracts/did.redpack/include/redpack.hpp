@@ -53,9 +53,7 @@ public:
     }
 
     ~redpack() {
-        // _global.set( _gstate, get_self() );
-        _global.remove();
-
+        _global.set( _gstate, get_self() );
     }
 
 
