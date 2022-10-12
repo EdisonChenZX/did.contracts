@@ -47,10 +47,10 @@ void redpack::ontransfer( name from, name to, asset quantity, string memo )
     auto count = stoi(string(parts[1]));
 
     auto type = stoi(string(parts[2]));
-    CHECKC( (redpack_type)redpack_itr->type == redpack_type::RANDOM || 
-            (redpack_type)redpack_itr->type == redpack_type::MEAN || 
-            (redpack_type)redpack_itr->type == redpack_type::DID_RANDOM || 
-            (redpack_type)redpack_itr->type == redpack_type::DID_MEAN, 
+    CHECKC( (redpack_type)type == redpack_type::RANDOM || 
+            (redpack_type)type == redpack_type::MEAN || 
+            (redpack_type)type == redpack_type::DID_RANDOM || 
+            (redpack_type)type == redpack_type::DID_MEAN, 
             err::TYPE_INVALID, "redpack type invalid" );
     
     auto fee_info = fee_t(quantity.symbol);
