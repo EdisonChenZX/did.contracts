@@ -62,7 +62,7 @@ public:
 
     [[eosio::action]] void claimredpack( const name& claimer, const name& code, const string& pwhash );
 
-    [[eosio::action]] void cancel( const uint64_t& packid );
+    [[eosio::action]] void cancel( const name& code );
 
     [[eosio::action]] void addfee( const asset& fee, const name& contract, const uint16_t& min_unit,
                             const name& did_contract, const uint64_t& did_id);
@@ -71,9 +71,7 @@ public:
 
     [[eosio::action]] void setconf( const name& admin, const uint16_t& hours );
 
-    [[eosio::action]] void delredpacks( uint64_t& id );
-
-    [[eosio::action]] void delcalims( uint64_t& id );
+    [[eosio::action]] void delredpacks( const name& code );
 
     asset _calc_fee(const asset& fee, const uint64_t count);
 

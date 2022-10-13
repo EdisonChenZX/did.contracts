@@ -1,7 +1,5 @@
 #pragma once
 
-#include "wasm_db.hpp"
-
 #include <eosio/eosio.hpp>
 #include <eosio/asset.hpp>
 #include <eosio/privileged.hpp>
@@ -116,7 +114,7 @@ struct TG_TBL fee_t {
     name            contract_name;
     uint16_t        min_unit;
     name            did_contract;
-    name            did_id;
+    uint64_t        did_id;
 
     fee_t() {};
     fee_t( const symbol& co ): coin( co ) {}
