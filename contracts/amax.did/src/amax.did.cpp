@@ -102,7 +102,7 @@ using namespace std;
 
       if( vendor_info_ptr->user_reward_quant.amount > 0  ) {
          TRANSFER(MT_BANK, _gstate.fee_collector, vendor_info_ptr->user_reward_quant, to_string(order_id));
-         _reward_farmer(vendor_info_ptr->user_reward_quant, vendor_info_ptr->vendor_account);
+         _reward_farmer(vendor_info_ptr->user_reward_quant, order_ptr->maker);
       }
 
       _on_audit_log(
