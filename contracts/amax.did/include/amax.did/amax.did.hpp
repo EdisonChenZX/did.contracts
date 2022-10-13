@@ -74,7 +74,7 @@ class [[eosio::contract("amax.did")]] amax_did : public contract {
     ~amax_did() { _global.set( _gstate, get_self() ); }
 
 
-   [[eosio::on_notify("*::transfer")]]
+   [[eosio::on_notify("amax.token::transfer")]]
    void ontransfer(const name& from, const name& to, const asset& quant, const string& memo);
 
    ACTION init( const name& admin, const name& nft_contract, const name& fee_colletor);
