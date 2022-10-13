@@ -71,7 +71,6 @@ TBL vendor_info_t {
     string          vendor_name;
     name            vendor_account;
     uint32_t        kyc_level;
-    asset           vendor_charge_quant;        //E.g. "1.000000 MUSDT"
     asset           user_reward_quant;          //E.g. "10.0000 APL"
     asset           user_charge_amount;         //E.g. "1.500000 MUSDT"
     nsymbol         nft_id;
@@ -91,7 +90,7 @@ TBL vendor_info_t {
     > idx_t;
 
     EOSLIB_SERIALIZE( vendor_info_t, (id)(vendor_name)(vendor_account)(kyc_level)
-                                     (vendor_charge_quant)(user_reward_quant)(user_charge_amount)
+                                     (user_reward_quant)(user_charge_amount)
                                      (nft_id)(status)(created_at)(updated_at) )
 };
 

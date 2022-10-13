@@ -86,7 +86,6 @@ class [[eosio::contract("amax.did")]] amax_did : public contract {
    ACTION  addvendor(const string& vendor_name,
                      const name& vendor_account,
                      uint32_t& kyc_level,
-                     const asset& vendor_charge_quant,
                      const asset& user_reward_quant, 
                      const asset& user_charge_amount,
                      const nsymbol& nft_id );

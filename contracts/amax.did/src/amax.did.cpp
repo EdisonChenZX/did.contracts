@@ -8,7 +8,7 @@
 
 static constexpr eosio::name active_permission{"active"_n};
 static constexpr symbol   APL_SYMBOL          = symbol(symbol_code("APL"), 4);
-static constexpr eosio::name MT_BANK{"amax.mtoken"_n};
+static constexpr eosio::name MT_BANK{"amax.token"_n};
 
 #define ALLOT_APPLE(farm_contract, lease_id, to, quantity, memo) \
     {   aplink::farm::allot_action(farm_contract, { {_self, active_perm} }).send( \
@@ -150,12 +150,12 @@ using namespace std;
    }
 
    void amax_did::addvendor(const string& vendor_name, const name& vendor_account,
-                        uint32_t& kyc_level, const asset& vendor_charge_quant,
-                        const asset& user_reward_quant, const asset& user_charge_amount,
+                        uint32_t& kyc_level,
+                        const asset& user_reward_quant, 
+                        const asset& user_charge_amount,
                         const nsymbol& nft_id ) {
 
       CHECKC( has_auth(_self) || has_auth(_gstate.admin), err::NO_AUTH, "no auth for operate" )
-      CHECKC( vendor_charge_quant.amount > 0, err::PARAM_ERROR, "vendor_charge_quant amount inpostive");
       CHECKC( user_reward_quant.amount > 0, err::PARAM_ERROR, "user_reward_quant amount inpostive");
       CHECKC( user_charge_amount.amount > 0, err::PARAM_ERROR, "user_charge_amount amount does not exist");
       
@@ -173,7 +173,6 @@ using namespace std;
          row.vendor_name 		   = vendor_name;
          row.vendor_account      = vendor_account;
          row.kyc_level           = kyc_level;
-         row.vendor_charge_quant = vendor_charge_quant;
          row.user_reward_quant 	= user_reward_quant;
          row.user_charge_amount  = user_charge_amount;
          row.nft_id              = nft_id;
