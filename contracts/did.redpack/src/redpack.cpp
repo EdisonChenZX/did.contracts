@@ -1,12 +1,11 @@
 
 #include <amax.token.hpp>
 #include "redpack.hpp"
-#include <utils.hpp>
+#include "utils.hpp"
 #include <algorithm>
 #include <chrono>
 #include <eosio/transaction.hpp>
 #include <eosio/crypto.hpp>
-#include <did.ntoken/did.ntoken_db.hpp>
 
 using std::chrono::system_clock;
 using namespace wasm;
@@ -34,15 +33,14 @@ void redpack::ontransfer( name from, name to, asset quantity, string memo )
 
 	CHECKC( quantity.amount > 0, err::NOT_POSITIVE, "quantity must be positive" )
 
+    //memo params format:
+    //${pwhash} : count : type : code
     auto parts = split( memo, ":" );
     CHECKC( parts.size() == 4, err::INVALID_FORMAT,"Expected format 'pwhash : count : type : code'" );
 
     auto code = name(parts[3]);
-
-    redpack_t::idx_t redpack(_self, _self.value);
-    auto redpack_index = redpack.get_index<"code"_n>();
-    auto redpack_iter = redpack_index.find(code.value);
-    CHECKC( redpack_iter == redpack_index.end(), err::RED_PACK_EXIST, "code is already exists" );
+    redpack_t redpack(code);
+    CHECKC( !_db.get(redpack), err::RED_PACK_EXIST, "code is already exists" );
 
     auto count = stoi(string(parts[1]));
 
@@ -52,7 +50,7 @@ void redpack::ontransfer( name from, name to, asset quantity, string memo )
             (redpack_type)type == redpack_type::DID_RANDOM || 
             (redpack_type)type == redpack_type::DID_MEAN, 
             err::TYPE_INVALID, "redpack type invalid" );
-    
+
     auto fee_info = fee_t(quantity.symbol);
     CHECKC( _db.get(fee_info), err::FEE_NOT_FOUND, "fee not found" );
 
@@ -63,9 +61,8 @@ void redpack::ontransfer( name from, name to, asset quantity, string memo )
     CHECKC( (total_quantity/count).amount >= power10(quantity.symbol.precision()-fee_info.min_unit), err::QUANTITY_NOT_ENOUGH , "not enough " );
 
     redpack_t::idx_t redpacks( _self, _self.value );
-
+    // auto id = redpacks.available_primary_key();
     redpacks.emplace( _self, [&]( auto& row ) {
-        row.id                          = _gstate.max_redpack_id;
         row.code 					    = code;
         row.sender 			            = from;
         row.pw_hash                     = string( parts[0] );
@@ -78,24 +75,28 @@ void redpack::ontransfer( name from, name to, asset quantity, string memo )
         row.type			            = type;
         row.created_at                  = time_point_sec( current_time_point() );
         row.updated_at                  = time_point_sec( current_time_point() );
-    });
-    _gstate.max_redpack_id++;
+   });
 
 }
 
-void redpack::claimredpack( const name& claimer, const name& code, const string& pwhash )
+void redpack::claimredpack( const name& claimer, const name& code, const string& pwhash ) {
+    claim( claimer, code, pwhash );
+}
+
+void redpack::claim( const name& claimer, const name& code, const string& pwhash )
 {
     require_auth( _gstate.tg_admin );
-    redpack_t::idx_t redpack_tbl(_self, _self.value);
-    auto redpack_index = redpack_tbl.get_index<"code"_n>();
-    auto redpack_itr = redpack_index.find(code.value);
-    CHECKC( redpack_itr != redpack_index.end(), err::RECORD_NO_FOUND, "redpack not found" );
-    CHECKC( redpack_itr->pw_hash == pwhash, err::PWHASH_INVALID, "incorrect password" );
-    CHECKC( redpack_itr->status == redpack_status::CREATED, err::EXPIRED, "redpack has expired" );
 
-    fee_t fee_info(redpack_itr->total_quantity.symbol);
+    redpack_t redpack(code);
+    CHECKC( _db.get(redpack), err::RECORD_NO_FOUND, "redpack not found" );
+    CHECKC( redpack.pw_hash == pwhash, err::PWHASH_INVALID, "incorrect password" );
+    CHECKC( redpack.status == redpack_status::CREATED, err::EXPIRED, "redpack has expired" );
+    CHECKC( (redpack_type)redpack.type == redpack_type::RANDOM || (redpack_type)redpack.type == redpack_type::MEAN, err::TYPE_INVALID, "redpack type invalid" );
+    
+    fee_t fee_info(redpack.total_quantity.symbol);
     CHECKC( _db.get(fee_info), err::FEE_NOT_FOUND, "fee not found" );
 
+    bool is_auth = false;
     if((redpack_type)redpack_itr->type == redpack_type::DID_RANDOM || (redpack_type)redpack_itr->type == redpack_type::DID_MEAN){
         auto claimer_acnts=amax::account_t::idx_t( fee_info.did_contract, claimer.value );
         bool is_auth = false;
@@ -108,9 +109,9 @@ void redpack::claimredpack( const name& claimer, const name& code, const string&
         CHECKC( is_auth, err::DID_NOT_AUTH, "did is not authenticated" );
     }
 
-    claim_t::idx_t claim_tbl(_self, _self.value);
-    auto claims_index = claim_tbl.get_index<"unionid"_n>();
-    uint128_t sec_index = get_unionid(claimer, redpack_itr->id);
+    claim_t::idx_t claims(_self, _self.value);
+    auto claims_index = claims.get_index<"unionid"_n>();
+    uint128_t sec_index = get_unionid(claimer, code.value);
     auto claims_iter = claims_index.find(sec_index);
     CHECKC( claims_iter == claims_index.end() ,err::NOT_REPEAT_RECEIVE, "Can't repeat to receive" );
 
@@ -128,31 +129,30 @@ void redpack::claimredpack( const name& claimer, const name& code, const string&
     }
     TRANSFER_OUT(fee_info.contract_name, claimer, redpack_quantity, string("red pack transfer"));
 
-    redpack_index.modify( redpack_itr, same_payer, [&]( auto& redpack ) {
-        redpack.remain_count --;
-        redpack.remain_quantity -= redpack_quantity;
-        redpack.updated_at = current_time_point();
-        if(redpack.remain_count == 0){
-            redpack.status = redpack_status::FINISHED;
-        }
-    });
+    redpack.remain_count--;
+    redpack.remain_quantity-=redpack_quantity;
+    redpack.updated_at = time_point_sec( current_time_point() );
+    if(redpack.remain_count == 0){
+        redpack.status = redpack_status::FINISHED;
+    }
+    _db.set(redpack);
 
-    auto id = claim_tbl.available_primary_key();
-    claim_tbl.emplace( _self, [&]( auto& row ) {
+    auto id = claims.available_primary_key();
+    claims.emplace( _self, [&]( auto& row ) {
         row.id                  = id;
-        row.pack_id 	        = redpack_itr->id;
-        row.sender              = redpack_itr->sender;
+        row.red_pack_code 	    = code;
+        row.sender              = redpack.sender;
         row.receiver            = claimer;
         row.quantity            = redpack_quantity;
         row.claimed_at		    = time_point_sec( current_time_point() );
-    });
+   });
 
 }
 
-void redpack::cancel( const uint64_t& pack_id )
+void redpack::cancel( const name& code )
 {
     require_auth( _gstate.tg_admin );
-    redpack_t redpack(pack_id);
+    redpack_t redpack(code);
     CHECKC( _db.get(redpack), err::RECORD_NO_FOUND, "redpack not found" );
     CHECKC( current_time_point() > redpack.created_at + eosio::hours(_gstate.expire_hours), err::NOT_EXPIRED, "expiration date is not reached" );
     if(redpack.status == redpack_status::CREATED){
@@ -164,16 +164,15 @@ void redpack::cancel( const uint64_t& pack_id )
     _db.del(redpack);
     claim_t::idx_t claims(_self, _self.value);
     auto claims_index = claims.get_index<"packid"_n>();
-    auto claims_iter = claims_index.find(pack_id);
+    auto claims_iter = claims_index.find(code.value);
     while(claims_iter != claims_index.end()){
         claims_index.erase(claims_iter);
-        claims_iter = claims_index.find(pack_id);
+        claims_iter = claims_index.find(code.value);
     }
 }
 
-void redpack::addfee( const asset& fee, const name& contract, const uint16_t& min_unit,
-                        const name& did_contract, const uint64_t& did_id)
-{    
+void redpack::addfee( const asset& fee, const name& contract, const uint16_t& min_unit)
+{
     require_auth( _self );
     CHECKC( fee.amount >= 0, err::FEE_NOT_POSITIVE, "fee must be positive" );
     CHECKC( get_precision(fee) >= power10(min_unit), err::MIN_UNIT_INVALID, "min unit not greater than coin precision" );
@@ -184,7 +183,7 @@ void redpack::addfee( const asset& fee, const name& contract, const uint16_t& mi
     fee_info.min_unit = min_unit;
     fee_info.did_contract = did_contract;
     fee_info.did_id = did_id;
-    _db.set( fee_info, _self );
+    _db.set( fee_info );
 }
 
 void redpack::delfee( const symbol& coin )
@@ -204,29 +203,16 @@ void redpack::setconf(const name& admin, const uint16_t& hours)
 
     _gstate.tg_admin = admin;
     _gstate.expire_hours = hours;
-
 }
 
-void redpack::delredpacks(uint64_t& id){
+void redpack::delredpacks(name& code){
     require_auth( _self );
 
     redpack_t::idx_t redpacks(_self, _self.value);
-    auto redpack_itr = redpacks.find(id);
+    auto redpack_itr = redpacks.find(code.value);
     while(redpack_itr != redpacks.end()){
         redpack_itr =redpacks.erase(redpack_itr);
     }
-
-}
-
-void redpack::delcalims(uint64_t& id){
-    require_auth( _self );
-
-    claim_t::idx_t claim(_self, _self.value);
-    auto claim_itr = claim.find(id);
-    while(claim_itr != claim.end()){
-        claim_itr =claim.erase(claim_itr);
-    }
-
 }
 
 asset redpack::_calc_fee(const asset& fee, const uint64_t count) {

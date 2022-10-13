@@ -1,5 +1,7 @@
 #pragma once
 
+#include "wasm_db.hpp"
+
 #include <eosio/eosio.hpp>
 #include <eosio/asset.hpp>
 #include <eosio/privileged.hpp>
@@ -36,9 +38,7 @@ struct TG_TBL_NAME("global") global_t {
     name tg_admin;
     uint16_t expire_hours;
     uint16_t data_failure_hours;
-    uint16_t max_redpack_id = 0;
-    
-    EOSLIB_SERIALIZE( global_t, (tg_admin)(expire_hours)(data_failure_hours)(max_redpack_id) )
+    EOSLIB_SERIALIZE( global_t, (tg_admin)(expire_hours)(data_failure_hours) )
 };
 typedef eosio::singleton< "global"_n, global_t > global_singleton;
 
@@ -50,12 +50,11 @@ namespace redpack_status {
 
 };
 
-uint128_t get_unionid( const name& rec, uint64_t pack_id ) {
-     return ( (uint128_t) rec.value << 64 ) | pack_id;
+uint128_t get_unionid( const name& rec, uint64_t packid ) {
+     return ( (uint128_t) rec.value << 64 ) | packid;
 }
 
 struct TG_TBL redpack_t {
-    uint64_t        id;
     name            code;
     name            sender;
     string          pw_hash;
@@ -69,38 +68,36 @@ struct TG_TBL redpack_t {
     time_point      created_at;
     time_point      updated_at;
 
-    uint64_t primary_key() const { return id; }
+    uint64_t primary_key() const { return code.value; }
 
     uint64_t by_updatedid() const { return ((uint64_t)updated_at.sec_since_epoch() << 32) | (code.value & 0x00000000FFFFFFFF); }
-    uint64_t by_code() const { return code.value; }
     uint64_t by_sender() const { return sender.value; }
 
     redpack_t(){}
-    redpack_t( const uint64_t& i ): id(i){}
+    redpack_t( const name& c ): code(c){}
 
     typedef eosio::multi_index<"redpacks"_n, redpack_t,
         indexed_by<"updatedid"_n,  const_mem_fun<redpack_t, uint64_t, &redpack_t::by_updatedid> >,
-        indexed_by<"code"_n,  const_mem_fun<redpack_t, uint64_t, &redpack_t::by_code> >,
         indexed_by<"senderid"_n,  const_mem_fun<redpack_t, uint64_t, &redpack_t::by_sender> >
     > idx_t;
-    
-    EOSLIB_SERIALIZE( redpack_t, (id)(code)(sender)(pw_hash)(total_quantity)(receiver_count)(remain_quantity)
+
+    EOSLIB_SERIALIZE( redpack_t, (code)(sender)(pw_hash)(total_quantity)(receiver_count)(remain_quantity)
                               (remain_count)(fee)(status)(type)(created_at)(updated_at) )
 };
 
 struct TG_TBL claim_t {
     uint64_t        id;
-    uint64_t        pack_id;
+    name            red_pack_code;
     name            sender;                     //plan owner
     name            receiver;                      //plan title: <=64 chars
     asset           quantity;             //asset issuing contract (ARC20)
     time_point      claimed_at;                 //update time: last updated at
     uint64_t primary_key() const { return id; }
-    uint128_t by_unionid() const { return get_unionid(receiver, pack_id); }
+    uint128_t by_unionid() const { return get_unionid(receiver, red_pack_code.value); }
     uint64_t by_claimedid() const { return ((uint64_t)claimed_at.sec_since_epoch() << 32) | (id & 0x00000000FFFFFFFF); }
     uint64_t by_sender() const { return sender.value; }
     uint64_t by_receiver() const { return receiver.value; }
-    uint64_t by_packid() const { return pack_id; }
+    uint64_t by_packid() const { return red_pack_code.value; }
 
     typedef eosio::multi_index<"claims"_n, claim_t,
         indexed_by<"unionid"_n,  const_mem_fun<claim_t, uint128_t, &claim_t::by_unionid> >,
@@ -110,7 +107,7 @@ struct TG_TBL claim_t {
         indexed_by<"receiverid"_n,  const_mem_fun<claim_t, uint64_t, &claim_t::by_receiver> >
     > idx_t;
 
-    EOSLIB_SERIALIZE( claim_t, (id)(pack_id)(sender)(receiver)(quantity)(claimed_at) )
+    EOSLIB_SERIALIZE( claim_t, (id)(red_pack_code)(sender)(receiver)(quantity)(claimed_at) )
 };
 
 struct TG_TBL fee_t {
@@ -119,7 +116,8 @@ struct TG_TBL fee_t {
     name            contract_name;
     uint16_t        min_unit;
     name            did_contract;
-    uint64_t        did_id;
+    name            did_id;
+
     fee_t() {};
     fee_t( const symbol& co ): coin( co ) {}
 
