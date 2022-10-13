@@ -100,8 +100,8 @@ using namespace std;
 
       // TRANSFER(MT_BANK, vendor_info_ptr->vendor_account, vendor_info_ptr->vendor_charge_quant, to_string(order_id));
 
-      if( vendor_info_ptr->user_reward_quant.amount > 0  ) {
-         TRANSFER(MT_BANK, _gstate.fee_collector, vendor_info_ptr->user_reward_quant, to_string(order_id));
+      if( vendor_info_ptr->user_charge_amount.amount > 0  ) {
+         TRANSFER(MT_BANK, _gstate.fee_collector, vendor_info_ptr->user_charge_amount, to_string(order_id));
          _reward_farmer(vendor_info_ptr->user_reward_quant, order_ptr->maker);
       }
 
