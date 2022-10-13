@@ -8,7 +8,7 @@
 
 static constexpr eosio::name active_permission{"active"_n};
 static constexpr symbol   APL_SYMBOL          = symbol(symbol_code("APL"), 4);
-static constexpr eosio::name MT_BANK{"amax.mtoken"_n};
+static constexpr eosio::name MT_BANK{"amax.token"_n};
 
 #define ALLOT_APPLE(farm_contract, lease_id, to, quantity, memo) \
     {   aplink::farm::allot_action(farm_contract, { {_self, active_perm} }).send( \
@@ -98,14 +98,11 @@ using namespace std;
       vector<nasset> quants = { did_quantity };
       TRANSFER_D( _gstate.nft_contract, order_ptr->maker, quants, "send did: " + to_string(order_id) );
 
-      TRANSFER(MT_BANK, vendor_info_ptr->vendor_account, vendor_info_ptr->vendor_charge_quant, to_string(order_id));
-      auto fee = vendor_info_ptr->user_charge_amount - vendor_info_ptr->vendor_charge_quant;
-      if( fee.amount > 0 ) {
-         TRANSFER(MT_BANK, _gstate.fee_collector, fee, to_string(order_id));
-      }
+      // TRANSFER(MT_BANK, vendor_info_ptr->vendor_account, vendor_info_ptr->vendor_charge_quant, to_string(order_id));
 
       if( vendor_info_ptr->user_reward_quant.amount > 0  ) {
-         _reward_farmer(vendor_info_ptr->user_reward_quant, vendor_info_ptr->vendor_account);
+         TRANSFER(MT_BANK, _gstate.fee_collector, vendor_info_ptr->user_reward_quant, to_string(order_id));
+         _reward_farmer(vendor_info_ptr->user_reward_quant, order_ptr->maker);
       }
 
       _on_audit_log(
@@ -134,10 +131,9 @@ using namespace std;
 
       CHECKC( vendor_info_ptr != vendor_info_idx.end(), err::RECORD_EXISTING, "vendor info already not exist. ");
 
-      TRANSFER(MT_BANK, vendor_info_ptr->vendor_account, vendor_info_ptr->vendor_charge_quant, to_string(order_id));
-      auto fee = vendor_info_ptr->user_charge_amount - vendor_info_ptr->vendor_charge_quant;
-      if( fee.amount > 0 ) {
-         TRANSFER(MT_BANK, _gstate.fee_collector, fee, to_string(order_id));
+      // TRANSFER(MT_BANK, vendor_info_ptr->vendor_account, vendor_info_ptr->vendor_charge_quant, to_string(order_id));
+      if( vendor_info_ptr->user_charge_amount.amount > 0 ) {
+         TRANSFER(MT_BANK, _gstate.fee_collector, vendor_info_ptr->user_charge_amount, to_string(order_id));
       }
       _on_audit_log(
                   order_ptr->id,
@@ -154,12 +150,12 @@ using namespace std;
    }
 
    void amax_did::addvendor(const string& vendor_name, const name& vendor_account,
-                        uint32_t& kyc_level, const asset& vendor_charge_quant,
-                        const asset& user_reward_quant, const asset& user_charge_amount,
+                        uint32_t& kyc_level,
+                        const asset& user_reward_quant, 
+                        const asset& user_charge_amount,
                         const nsymbol& nft_id ) {
 
       CHECKC( has_auth(_self) || has_auth(_gstate.admin), err::NO_AUTH, "no auth for operate" )
-      CHECKC( vendor_charge_quant.amount > 0, err::PARAM_ERROR, "vendor_charge_quant amount inpostive");
       CHECKC( user_reward_quant.amount > 0, err::PARAM_ERROR, "user_reward_quant amount inpostive");
       CHECKC( user_charge_amount.amount > 0, err::PARAM_ERROR, "user_charge_amount amount does not exist");
       
@@ -177,7 +173,6 @@ using namespace std;
          row.vendor_name 		   = vendor_name;
          row.vendor_account      = vendor_account;
          row.kyc_level           = kyc_level;
-         row.vendor_charge_quant = vendor_charge_quant;
          row.user_reward_quant 	= user_reward_quant;
          row.user_charge_amount  = user_charge_amount;
          row.nft_id              = nft_id;
