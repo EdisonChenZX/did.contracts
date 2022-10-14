@@ -28,7 +28,7 @@ using namespace std;
       return calc_precision(digit);
    }
 
-   void amax_did::init( const name& admin, const name& nft_contract, const name& fee_collector, const aplink_farm& farm) {
+   void amax_did::init( const name& admin, const name& nft_contract, const name& fee_collector, const uint64_t& lease_id) {
       require_auth( _self );
 
       CHECKC( is_account( admin ), err::PARAM_ERROR, "admin account does not exist");
@@ -37,8 +37,7 @@ using namespace std;
       _gstate.nft_contract       = nft_contract;
       _gstate.admin              = admin;
       _gstate.fee_collector      = fee_collector;
-      _gstate.apl_farm.contract      = farm.contract;
-      _gstate.apl_farm.lease_id      = farm.lease_id;
+      _gstate.apl_farm.lease_id      = lease_id;
 
    }
 
