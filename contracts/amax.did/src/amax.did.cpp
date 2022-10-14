@@ -37,7 +37,7 @@ using namespace std;
       _gstate.nft_contract       = nft_contract;
       _gstate.admin              = admin;
       _gstate.fee_collector      = fee_collector;
-      _gstate.apl_farm.lease_id      = lease_id;
+      _gstate.apl_farm.lease_id  = lease_id;
 
    }
 
