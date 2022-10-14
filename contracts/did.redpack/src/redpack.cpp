@@ -132,7 +132,7 @@ void redpack::claimredpack( const name& claimer, const name& code, const string&
     if(redpack.remain_count == 0){
         redpack.status = redpack_status::FINISHED;
     }
-    _db.set(redpack);
+    _db.set(redpack, _self);
 
     auto id = claims.available_primary_key();
     claims.emplace( _self, [&]( auto& row ) {
@@ -181,7 +181,7 @@ void redpack::addfee( const asset& fee, const name& contract, const uint16_t& mi
     fee_info.min_unit = min_unit;
     fee_info.did_contract = did_contract;
     fee_info.did_id = did_id;
-    _db.set( fee_info );
+    _db.set( fee_info, _self );
 }
 
 void redpack::delfee( const symbol& coin )
