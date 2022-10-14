@@ -28,7 +28,7 @@ using namespace std;
       return calc_precision(digit);
    }
 
-   void amax_did::init( const name& admin, const name& nft_contract, const name& fee_collector) {
+   void amax_did::init( const name& admin, const name& nft_contract, const name& fee_collector, const uint64_t& lease_id) {
       require_auth( _self );
 
       CHECKC( is_account( admin ), err::PARAM_ERROR, "admin account does not exist");
@@ -37,6 +37,8 @@ using namespace std;
       _gstate.nft_contract       = nft_contract;
       _gstate.admin              = admin;
       _gstate.fee_collector      = fee_collector;
+      _gstate.apl_farm.lease_id  = lease_id;
+
    }
 
     void amax_did::ontransfer(const name& from, const name& to, const asset& quant, const string& memo) {
@@ -100,8 +102,8 @@ using namespace std;
 
       // TRANSFER(MT_BANK, vendor_info_ptr->vendor_account, vendor_info_ptr->vendor_charge_quant, to_string(order_id));
 
-      if( vendor_info_ptr->user_reward_quant.amount > 0  ) {
-         TRANSFER(MT_BANK, _gstate.fee_collector, vendor_info_ptr->user_reward_quant, to_string(order_id));
+      if( vendor_info_ptr->user_charge_amount.amount > 0  ) {
+         TRANSFER(MT_BANK, _gstate.fee_collector, vendor_info_ptr->user_charge_amount, to_string(order_id));
          _reward_farmer(vendor_info_ptr->user_reward_quant, order_ptr->maker);
       }
 
