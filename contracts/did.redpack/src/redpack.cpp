@@ -88,7 +88,6 @@ void redpack::claimredpack( const name& claimer, const name& code, const string&
     CHECKC( _db.get(redpack), err::RECORD_NO_FOUND, "redpack not found" );
     CHECKC( redpack.pw_hash == pwhash, err::PWHASH_INVALID, "incorrect password" );
     CHECKC( redpack.status == redpack_status::CREATED, err::EXPIRED, "redpack has expired" );
-    CHECKC( (redpack_type)redpack.type == redpack_type::RANDOM || (redpack_type)redpack.type == redpack_type::MEAN, err::TYPE_INVALID, "redpack type invalid" );
     
     fee_t fee_info(redpack.total_quantity.symbol);
     CHECKC( _db.get(fee_info), err::FEE_NOT_FOUND, "fee not found" );
