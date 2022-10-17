@@ -24,7 +24,8 @@ enum class err: uint8_t {
    VAILD_TIME_INVALID   = 13,
    MIN_UNIT_INVALID     = 14,
    RED_PACK_EXIST       = 15,
-   DID_NOT_AUTH         = 16
+   DID_NOT_AUTH         = 16,
+   UNDER_MAINTENANCE    = 17
 };
 
 enum class redpack_type: uint8_t {
@@ -69,7 +70,7 @@ public:
 
     [[eosio::action]] void delfee( const symbol& coin );
 
-    [[eosio::action]] void setconf( const name& admin, const uint16_t& hours );
+    [[eosio::action]] void setconf( const name& admin, const uint16_t& hours, const bool& is_send_did );
 
     [[eosio::action]] void delredpacks( const name& code );
 

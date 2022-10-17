@@ -36,7 +36,8 @@ struct TG_TBL_NAME("global") global_t {
     name tg_admin;
     uint16_t expire_hours;
     uint16_t data_failure_hours;
-    EOSLIB_SERIALIZE( global_t, (tg_admin)(expire_hours)(data_failure_hours) )
+    bool     is_send_did;
+    EOSLIB_SERIALIZE( global_t, (tg_admin)(expire_hours)(data_failure_hours)(is_send_did) )
 };
 typedef eosio::singleton< "global"_n, global_t > global_singleton;
 
@@ -115,7 +116,7 @@ struct TG_TBL fee_t {
     uint16_t        min_unit;
     name            did_contract;
     uint64_t        did_id;
-
+    
     fee_t() {};
     fee_t( const symbol& co ): coin( co ) {}
 
