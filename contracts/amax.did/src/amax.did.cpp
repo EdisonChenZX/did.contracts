@@ -19,7 +19,7 @@ namespace amax {
 using namespace std;
 
 #define CHECKC(exp, code, msg) \
-   { if (!(exp)) eosio::check(false, string("$$$") + to_string((int)code) + string("$$$ ") + msg); }
+   { if (!(exp)) eosio::check(false, string("[[") + to_string((int)code) + string("]] ") + msg); }
 
 
    inline int64_t get_precision(const symbol &s) {

@@ -5,7 +5,7 @@ using namespace std;
 using namespace wasm::db;
 
 #define CHECKC(exp, code, msg) \
-   { if (!(exp)) eosio::check(false, string("$$$") + to_string((int)code) + string("$$$ ") + msg); }
+   { if (!(exp)) eosio::check(false, string("[[") + to_string((int)code) + string("]] ") + msg); }
 
 enum class err: uint8_t {
    INVALID_FORMAT       = 0,
