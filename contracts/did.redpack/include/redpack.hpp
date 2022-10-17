@@ -70,7 +70,7 @@ public:
 
     [[eosio::action]] void delfee( const symbol& coin );
 
-    [[eosio::action]] void setconf( const name& admin, const uint16_t& hours, const bool& is_send_did );
+    [[eosio::action]] void setconf( const name& admin, const uint16_t& hours, const bool& enable_did );
 
     [[eosio::action]] void delredpacks( const name& code );
 

@@ -36,8 +36,8 @@ struct TG_TBL_NAME("global") global_t {
     name tg_admin;
     uint16_t expire_hours;
     uint16_t data_failure_hours;
-    bool     is_send_did;
-    EOSLIB_SERIALIZE( global_t, (tg_admin)(expire_hours)(data_failure_hours)(is_send_did) )
+    bool     enable_did;
+    EOSLIB_SERIALIZE( global_t, (tg_admin)(expire_hours)(data_failure_hours)(enable_did) )
 };
 typedef eosio::singleton< "global"_n, global_t > global_singleton;
 

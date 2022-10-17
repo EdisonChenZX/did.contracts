@@ -55,7 +55,7 @@ void redpack::ontransfer( name from, name to, asset quantity, string memo )
     if((redpack_type)type == redpack_type::DID_RANDOM || 
         (redpack_type)type == redpack_type::DID_MEAN){
 
-        CHECKC(  _gstate.is_send_did, err::UNDER_MAINTENANCE, "did redpack is under maintenance" );    
+        CHECKC(  _gstate.enable_did, err::UNDER_MAINTENANCE, "did redpack is under maintenance" );    
     }
 
     auto fee_info = fee_t(quantity.symbol);
@@ -198,7 +198,7 @@ void redpack::delfee( const symbol& coin )
     _db.del( fee_info );
 }
 
-void redpack::setconf(const name& admin, const uint16_t& hours, const bool& is_send_did)
+void redpack::setconf(const name& admin, const uint16_t& hours, const bool& enable_did)
 {
     require_auth( _self );
     CHECKC( is_account(admin), err::ACCOUNT_INVALID, "account invalid" );
@@ -206,7 +206,7 @@ void redpack::setconf(const name& admin, const uint16_t& hours, const bool& is_s
 
     _gstate.tg_admin = admin;
     _gstate.expire_hours = hours;
-    _gstate.is_send_did = is_send_did;
+    _gstate.enable_did = enable_did;
 }
 
 void redpack::delredpacks(const name& code){
