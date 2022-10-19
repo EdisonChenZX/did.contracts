@@ -1,0 +1,16 @@
+{
+    "name": "DID NFT",
+    "token_type": "ERC1155", 
+    "description": "Decentralized Identity NFT Token for Armonia Users",
+    "token_id": "1000001", 
+    "parent_id": "0",  
+    "file_type": ".png",
+    "file_url": "https://xdao.mypinata.cloud/ipfs/QmQBYn2zCczpNXYc5RTwn1rTmrth7bLToopKNisCzKAQpU", 
+    "cover_url": "https://xdao.mypinata.cloud/ipfs/QmQBYn2zCczpNXYc5RTwn1rTmrth7bLToopKNisCzKAQpU",
+    "contract_address": "did.ntoken",   
+    "maximum_supply": 1000000000, 
+    "quantity": 1000000000,
+    "issuer": "armoniaadmin", 
+    "ipowner": "armoniaadmin",
+    "created_at": "2022-10-19T11:22:55+00:00"
+}
