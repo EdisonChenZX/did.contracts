@@ -60,7 +60,7 @@ using namespace std;
       auto vendor_info_ptr      = vendor_info_idx.find(((uint128_t) vendor_account.value << 64) + kyc_level);
       CHECKC( vendor_info_ptr != vendor_info_idx.end(), err::RECORD_NOT_FOUND, "vendor info does not exist. ");
       CHECKC( vendor_info_ptr->status == vendor_info_status::RUNNING, err::STATUS_ERROR, "vendor status is not runnig ");
-      CHECKC( vendor_info_ptr->user_charge_amount == quant, err::PARAM_ERROR, "transfer amount error");
+      CHECKC( vendor_info_ptr->user_charge_quant == quant, err::PARAM_ERROR, "transfer amount error");
 
       order_t::order_idx orders(_self, _self.value);
       auto order_idx       = orders.get_index<"makeridx"_n>();
@@ -102,8 +102,8 @@ using namespace std;
 
       // TRANSFER(MT_BANK, vendor_info_ptr->vendor_account, vendor_info_ptr->vendor_charge_quant, to_string(order_id));
 
-      if( vendor_info_ptr->user_charge_amount.amount > 0  ) {
-         TRANSFER(MT_BANK, _gstate.fee_collector, vendor_info_ptr->user_charge_amount, to_string(order_id));
+      if( vendor_info_ptr->user_charge_quant.amount > 0  ) {
+         TRANSFER(MT_BANK, _gstate.fee_collector, vendor_info_ptr->user_charge_quant, to_string(order_id));
          _reward_farmer(vendor_info_ptr->user_reward_quant, order_ptr->maker);
       }
 
@@ -113,7 +113,7 @@ using namespace std;
                   vendor_info_ptr->vendor_name,
                   order_ptr->vendor_account,
                   order_ptr->kyc_level,
-                  vendor_info_ptr->user_charge_amount,
+                  vendor_info_ptr->user_charge_quant,
                   "successed"_n,
                   msg,
                   current_time_point()
@@ -134,8 +134,8 @@ using namespace std;
       CHECKC( vendor_info_ptr != vendor_info_idx.end(), err::RECORD_EXISTING, "vendor info already not exist. ");
 
       // TRANSFER(MT_BANK, vendor_info_ptr->vendor_account, vendor_info_ptr->vendor_charge_quant, to_string(order_id));
-      if( vendor_info_ptr->user_charge_amount.amount > 0 ) {
-         TRANSFER(MT_BANK, _gstate.fee_collector, vendor_info_ptr->user_charge_amount, to_string(order_id));
+      if( vendor_info_ptr->user_charge_quant.amount > 0 ) {
+         TRANSFER(MT_BANK, _gstate.fee_collector, vendor_info_ptr->user_charge_quant, to_string(order_id));
       }
       _on_audit_log(
                   order_ptr->id,
@@ -143,7 +143,7 @@ using namespace std;
                   vendor_info_ptr->vendor_name,
                   order_ptr->vendor_account,
                   order_ptr->kyc_level,
-                  vendor_info_ptr->user_charge_amount,
+                  vendor_info_ptr->user_charge_quant,
                   "failed"_n,
                   reason,
                   current_time_point()
@@ -154,12 +154,12 @@ using namespace std;
    void amax_did::addvendor(const string& vendor_name, const name& vendor_account,
                         uint32_t& kyc_level,
                         const asset& user_reward_quant, 
-                        const asset& user_charge_amount,
+                        const asset& user_charge_quant,
                         const nsymbol& nft_id ) {
 
       CHECKC( has_auth(_self) || has_auth(_gstate.admin), err::NO_AUTH, "no auth for operate" )
       CHECKC( user_reward_quant.amount > 0, err::PARAM_ERROR, "user_reward_quant amount inpostive");
-      CHECKC( user_charge_amount.amount > 0, err::PARAM_ERROR, "user_charge_amount amount does not exist");
+      CHECKC( user_charge_quant.amount > 0, err::PARAM_ERROR, "user_charge_quant amount does not exist");
       
 
       vendor_info_t::idx_t vendor_infos(_self, _self.value);
@@ -176,7 +176,7 @@ using namespace std;
          row.vendor_account      = vendor_account;
          row.kyc_level           = kyc_level;
          row.user_reward_quant 	= user_reward_quant;
-         row.user_charge_amount  = user_charge_amount;
+         row.user_charge_quant  = user_charge_quant;
          row.nft_id              = nft_id;
          row.status			      = vendor_info_status::RUNNING;
          row.created_at          = now;
@@ -229,13 +229,13 @@ using namespace std;
                      const string& vendor_name,
                      const name& vendor_account,
                      const uint32_t& kyc_level,
-                     const asset& user_charge_amount,
+                     const asset& user_charge_quant,
                      const name& status,
                      const string& msg,
                      const time_point&   created_at
       ) {
             amax_did::auditlog_action act{ _self, { {_self, active_permission} } };
-            act.send(order_id, maker, vendor_name, vendor_account, kyc_level, user_charge_amount, status, msg, created_at   );
+            act.send(order_id, maker, vendor_name, vendor_account, kyc_level, user_charge_quant, status, msg, created_at   );
       }
 
 } //namespace amax

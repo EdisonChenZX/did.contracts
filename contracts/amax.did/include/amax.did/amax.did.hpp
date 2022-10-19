@@ -87,7 +87,7 @@ class [[eosio::contract("amax.did")]] amax_did : public contract {
                      const name& vendor_account,
                      uint32_t& kyc_level,
                      const asset& user_reward_quant, 
-                     const asset& user_charge_amount,
+                     const asset& user_charge_quant,
                      const nsymbol& nft_id );
     ACTION chgvendor(const uint64_t& vendor_id, const name& status);
 
@@ -119,7 +119,7 @@ class [[eosio::contract("amax.did")]] amax_did : public contract {
                      const string& vendor_name,
                      const name& vendor_account,
                      const uint32_t& kyc_level,
-                     const asset& user_charge_amount,
+                     const asset& user_charge_quant,
                      const name& status,
                      const string& msg,
                      const time_point&   created_at
