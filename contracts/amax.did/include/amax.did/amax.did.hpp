@@ -7,7 +7,7 @@
 
 #include <string>
 
-#include <amax.did/amax.did_db.hpp>
+#include <amax.did/amax.did.db.hpp>
 #include <amax.mtoken/amax.mtoken.hpp>
 
 namespace amax {
@@ -77,6 +77,12 @@ class [[eosio::contract("amax.did")]] amax_did : public contract {
    [[eosio::on_notify("amax.token::transfer")]]
    void ontransfer(const name& from, const name& to, const asset& quant, const string& memo);
 
+   ACTION setadmin( const name& admin ) {
+      require_auth( _self );
+
+      _gstate.admin = admin;
+   }
+   
    ACTION init( const name& admin, const name& nft_contract, const name& fee_colletor, const uint64_t& lease_id);
 
    ACTION finishdid(const uint64_t& order_id, const string& msg);
