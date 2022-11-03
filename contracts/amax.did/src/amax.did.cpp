@@ -184,17 +184,31 @@ using namespace std;
       });   
    }
 
-   void amax_did::chgvendor(const uint64_t& vendor_id, const name& status) {
+   void amax_did::chgvendor(const uint64_t& vendor_id, const name& status,
+                           const asset& user_reward_quant,
+                           const asset& user_charge_quant, 
+                           const nsymbol& nft_id) {
 
       CHECKC( has_auth(_self) || has_auth(_gstate.admin), err::NO_AUTH, "no auth for operate" )
 
       vendor_info_t::idx_t vendor_infos(_self, _self.value);
       auto vender_itr = vendor_infos.find( vendor_id );
       CHECKC( vender_itr != vendor_infos.end(), err::RECORD_NOT_FOUND, "vender not found: " + to_string(vendor_id) );
-      CHECKC( vender_itr->status != status, err::STATUS_ERROR, "vender status already equal: " + to_string(vendor_id) );
+      // CHECKC( vender_itr->status != status, err::STATUS_ERROR, "vender status already equal: " + to_string(vendor_id) );
       
       vendor_infos.modify( vender_itr, _self, [&]( auto& row ) {
          row.status           = status;
+
+         if (user_reward_quant.amount > 0) {
+            row.user_reward_quant = user_reward_quant;
+         }
+         if (user_charge_quant.amount > 0) {
+            row.user_charge_quant = user_charge_quant;
+         }
+         if (nft_id.id > 0) {
+            row.nft_id = nft_id;
+         }
+
          row.updated_at       = time_point_sec( current_time_point() );
       });
 
