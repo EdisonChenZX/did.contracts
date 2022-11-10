@@ -23,5 +23,8 @@ lease_id=5
 # mpush aplink.token transfer '["armoniaadmin","aplink.farm","10000000.0000 APL","'$lease_id'"]' -p armoniaadmin
 
 # DID contract
-mpush amax.did init '["armoniaadmin","did.ntoken","amax.daodev", '$lease_id']' -p amax.did
-mpush amax.did addvendor '["alibaba","amax.daodev",1,"10.0000 APL","0.05000000 AMAX",['$token_id', 0]]' -p $admin
+# mpush amax.did init '["armoniaadmin","did.ntoken","amax.daodev", '$lease_id']' -p amax.did
+# mpush amax.did addvendor '["alibaba","amax.daodev",1,"10.0000 APL","0.05000000 AMAX",['$token_id', 0]]' -p $admin
+
+
+ mtbl did.ntoken amax.did accounts |grep amount
