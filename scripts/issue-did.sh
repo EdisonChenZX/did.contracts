@@ -8,6 +8,9 @@ admin=armoniaadmin
 # mpush did.ntoken issue '["armoniaadmin",[100000,['$token_id',0]],""]' -p armoniaadmin
 # mcli set account permission amax.did active --add-code
 
+#mpush did.ntoken issue '["armoniaadmin",[900000,[1000001,0]],""]' -p armoniaadmin
+# mpush did.ntoken transfer '["armoniaadmin","amax.did",[[900000, [1000001, 0]]],"refuel"]' -p armoniaadmin
+
 # mpush did.ntoken setacctperms '["armoniaadmin","amax.did",['$token_id',0],true,true]' -p armoniaadmin
 # mpush did.ntoken transfer '["armoniaadmin","amax.did",[[100000, ['$token_id', 0]]],"refuel"]' -p armoniaadmin
 
