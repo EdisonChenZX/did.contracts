@@ -219,7 +219,7 @@ using namespace std;
       aplink::farm::available_apples( _gstate.apl_farm.contract, _gstate.apl_farm.lease_id, apples );
       if (apples.amount == 0) return;
 
-      ALLOT_APPLE( _gstate.apl_farm.contract, _gstate.apl_farm.lease_id, farmer, reward_quant, "xin reward" )
+      ALLOT_APPLE( _gstate.apl_farm.contract, _gstate.apl_farm.lease_id, farmer, reward_quant, "DID reward" )
    }
 
    void amax_did::auditlog( 
