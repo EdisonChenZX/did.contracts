@@ -63,7 +63,7 @@ TBL order_t {
 
     typedef eosio::multi_index
     < "orders"_n,  order_t,
-        indexed_by<"applicantidx"_n,     const_mem_fun<order_t, uint64_t, &order_t::by_applicant> >
+        indexed_by<"makeridx"_n,     const_mem_fun<order_t, uint64_t, &order_t::by_applicant> >
     > order_idx;
 
     EOSLIB_SERIALIZE( order_t, (id)(applicant)(vendor_account)(kyc_level)(secret_md5)(created_at) )
