@@ -26,6 +26,10 @@ using namespace eosio;
 #define TBL struct [[eosio::table, eosio::contract("amax.did")]]
 #define NTBL(name) struct [[eosio::table(name), eosio::contract("amax.did")]]
 
+static constexpr eosio::name ORDER_STATUS_OK{"ok"_n };
+static constexpr eosio::name ORDER_STATUS_NOK{"nok"_n };
+static constexpr eosio::name ORDER_STATUS_PENDING{"pending"_n };
+
 struct aplink_farm {
     name contract           = "aplink.farm"_n;
     uint64_t lease_id       = 5;    //nftone-farm-land
@@ -45,7 +49,7 @@ typedef eosio::singleton< "global"_n, global_t > global_singleton;
 
 TBL order_t {
     uint64_t        id;                 //PK
-    name            maker;
+    name            applicant;
     name            vendor_account;
     uint32_t        kyc_level;
     string          secret_md5;
@@ -55,14 +59,14 @@ TBL order_t {
     order_t(const uint64_t& i): id(i) {}
 
     uint64_t primary_key()const { return id; }
-    uint64_t by_maker() const { return maker.value ; }
+    uint64_t by_applicant() const { return applicant.value ; }
 
     typedef eosio::multi_index
     < "orders"_n,  order_t,
-        indexed_by<"makeridx"_n,     const_mem_fun<order_t, uint64_t, &order_t::by_maker> >
+        indexed_by<"applicantidx"_n,     const_mem_fun<order_t, uint64_t, &order_t::by_applicant> >
     > order_idx;
 
-    EOSLIB_SERIALIZE( order_t, (id)(maker)(vendor_account)(kyc_level)(secret_md5)(created_at) )
+    EOSLIB_SERIALIZE( order_t, (id)(applicant)(vendor_account)(kyc_level)(secret_md5)(created_at) )
 };
 
 //Scope: nasset.symbol.id
@@ -92,6 +96,19 @@ TBL vendor_info_t {
     EOSLIB_SERIALIZE( vendor_info_t, (id)(vendor_name)(vendor_account)(kyc_level)
                                      (user_reward_quant)(user_charge_quant)
                                      (nft_id)(status)(created_at)(updated_at) )
+};
+
+TBL pending_t {
+    uint64_t        id;                 //PK
+
+    pending_t() {}
+    pending_t(const uint64_t& i): id(i) {}
+
+    uint64_t primary_key()const { return id; }
+
+    typedef eosio::multi_index< "pendings"_n,  pending_t > idx_t;
+
+    EOSLIB_SERIALIZE( pending_t, (id) )
 };
 
 } //namespace amax

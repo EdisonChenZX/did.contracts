@@ -63,14 +63,14 @@ using namespace std;
       CHECKC( vendor_info_ptr->user_charge_quant == quant, err::PARAM_ERROR, "transfer amount error");
 
       order_t::order_idx orders(_self, _self.value);
-      auto order_idx       = orders.get_index<"makeridx"_n>();
+      auto order_idx       = orders.get_index<"applicantidx"_n>();
       auto order_ptr       = order_idx.find( from.value );
       CHECKC( order_ptr == order_idx.end(), err::RECORD_EXISTING, "order already exist. ");
       _gstate.last_order_idx ++;
 
       orders.emplace(_self, [&]( auto& row ) {
          row.id               =  _gstate.last_order_idx;
-         row.maker            = from;
+         row.applicant        = from;
          row.vendor_account   = vendor_account;
          row.kyc_level        = kyc_level;
          row.secret_md5       = parts[2];
@@ -78,77 +78,77 @@ using namespace std;
       });
    }
 
-   /**
-    * @brief send nasset tokens into nftone marketplace
-    *
-    * @param order_id
-    *
-    */
-   void amax_did::finishdid( const uint64_t& order_id, const string& msg ) {
+   void amax_did::setdidstatus( const uint64_t& order_id, const name& status, const string& msg ) {
       CHECKC( has_auth(_self) || has_auth(_gstate.admin), err::NO_AUTH, "no auth for operate" )
       order_t::order_idx orders(_self, _self.value);
       auto order_ptr     = orders.find(order_id);
       CHECKC( order_ptr != orders.end(), err::RECORD_NOT_FOUND, "order not exist. ");
 
-      vendor_info_t::idx_t vendor_infos(_self, _self.value);
-      auto vendor_info_idx       = vendor_infos.get_index<"vendoridx"_n>();
-      auto vendor_info_ptr      = vendor_info_idx.find(((uint128_t) order_ptr->vendor_account.value << 64) + order_ptr->kyc_level);
-
-      CHECKC( vendor_info_ptr != vendor_info_idx.end(), err::RECORD_EXISTING, "vendor info already not exist. ");
-
-      auto did_quantity = nasset(1, vendor_info_ptr->nft_id);
-      vector<nasset> quants = { did_quantity };
-      TRANSFER_D( _gstate.nft_contract, order_ptr->maker, quants, "send did: " + to_string(order_id) );
-
-      // TRANSFER(MT_BANK, vendor_info_ptr->vendor_account, vendor_info_ptr->vendor_charge_quant, to_string(order_id));
-
-      if( vendor_info_ptr->user_charge_quant.amount > 0  ) {
-         TRANSFER(MT_BANK, _gstate.fee_collector, vendor_info_ptr->user_charge_quant, to_string(order_id));
-         _reward_farmer(vendor_info_ptr->user_reward_quant, order_ptr->maker);
+      if (status == ORDER_STATUS_PENDING) {
+         _add_pending( order_id );
+         return;
       }
 
-      _on_audit_log(
-                  order_ptr->id,
-                  order_ptr->maker,
-                  vendor_info_ptr->vendor_name,
-                  order_ptr->vendor_account,
-                  order_ptr->kyc_level,
-                  vendor_info_ptr->user_charge_quant,
-                  "successed"_n,
-                  msg,
-                  current_time_point()
-                  );
-      orders.erase(*order_ptr);
-   }
-
-    void amax_did::faildid( const uint64_t& order_id, const string& reason) {
-      CHECKC( has_auth(_self) || has_auth(_gstate.admin), err::NO_AUTH, "no auth for operate" )
-      order_t::order_idx orders(_self, _self.value);
-      auto order_ptr     = orders.find(order_id);
-      CHECKC( order_ptr != orders.end(), err::RECORD_NOT_FOUND, "order not exist. ");
-
       vendor_info_t::idx_t vendor_infos(_self, _self.value);
       auto vendor_info_idx       = vendor_infos.get_index<"vendoridx"_n>();
       auto vendor_info_ptr      = vendor_info_idx.find(((uint128_t) order_ptr->vendor_account.value << 64) + order_ptr->kyc_level);
 
       CHECKC( vendor_info_ptr != vendor_info_idx.end(), err::RECORD_EXISTING, "vendor info already not exist. ");
 
-      // TRANSFER(MT_BANK, vendor_info_ptr->vendor_account, vendor_info_ptr->vendor_charge_quant, to_string(order_id));
+      if (status == ORDER_STATUS_OK) {
+         auto did_quantity = nasset(1, vendor_info_ptr->nft_id);
+         vector<nasset> quants = { did_quantity };
+         TRANSFER_D( _gstate.nft_contract, order_ptr->applicant, quants, "send did: " + to_string(order_id) );
+         if( vendor_info_ptr->user_reward_quant.amount > 0  ) {
+            _reward_farmer(vendor_info_ptr->user_reward_quant, order_ptr->applicant);
+         }
+      } else if (status == ORDER_STATUS_NOK) {
+
+      } else {
+         CHECKC( false, err::PARAM_ERROR, "status is error" );
+      }
+      
       if( vendor_info_ptr->user_charge_quant.amount > 0 ) {
          TRANSFER(MT_BANK, _gstate.fee_collector, vendor_info_ptr->user_charge_quant, to_string(order_id));
       }
+      
       _on_audit_log(
-                  order_ptr->id,
-                  order_ptr->maker,
-                  vendor_info_ptr->vendor_name,
-                  order_ptr->vendor_account,
-                  order_ptr->kyc_level,
-                  vendor_info_ptr->user_charge_quant,
-                  "failed"_n,
-                  reason,
-                  current_time_point()
-                  );
+            order_ptr->id,
+            order_ptr->applicant,
+            vendor_info_ptr->vendor_name,
+            order_ptr->vendor_account,
+            order_ptr->kyc_level,
+            vendor_info_ptr->user_charge_quant,
+            status,
+            msg,
+            current_time_point()
+      );
+
       orders.erase(*order_ptr);
+
+      _del_pending( order_id );
+   }
+
+   void amax_did::_add_pending( const uint64_t& order_id ) {
+
+      pending_t::idx_t pendings(_self, _self.value);
+      auto pending_ptr     = pendings.find(order_id);
+      if( pending_ptr != pendings.end()) 
+         return;
+
+      pendings.emplace(_self, [&]( auto& row ) {
+         row.id               = order_id;
+      });
+   }
+      
+   void amax_did::_del_pending( const uint64_t& order_id ) {
+
+      pending_t::idx_t pendings(_self, _self.value);
+      auto pending_ptr     = pendings.find(order_id);
+      if( pending_ptr == pendings.end()) 
+         return;
+      pendings.erase(pending_ptr);
+      
    }
 
    void amax_did::addvendor(const string& vendor_name, const name& vendor_account,
