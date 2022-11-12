@@ -63,7 +63,7 @@ using namespace std;
       CHECKC( vendor_info_ptr->user_charge_quant == quant, err::PARAM_ERROR, "transfer amount error");
 
       order_t::order_idx orders(_self, _self.value);
-      auto order_idx       = orders.get_index<"applicantidx"_n>();
+      auto order_idx       = orders.get_index<"makeridx"_n>();
       auto order_ptr       = order_idx.find( from.value );
       CHECKC( order_ptr == order_idx.end(), err::RECORD_EXISTING, "order already exist. ");
       _gstate.last_order_idx ++;
