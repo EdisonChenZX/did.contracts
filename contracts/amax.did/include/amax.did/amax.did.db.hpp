@@ -99,16 +99,16 @@ TBL vendor_info_t {
 };
 
 TBL pending_t {
-    uint64_t        id;                 //PK
+    uint64_t        order_id;                 //PK
 
     pending_t() {}
-    pending_t(const uint64_t& i): id(i) {}
+    pending_t(const uint64_t& i): order_id(i) {}
 
-    uint64_t primary_key()const { return id; }
+    uint64_t primary_key()const { return order_id; }
 
     typedef eosio::multi_index< "pendings"_n,  pending_t > idx_t;
 
-    EOSLIB_SERIALIZE( pending_t, (id) )
+    EOSLIB_SERIALIZE( pending_t, (order_id) )
 };
 
 } //namespace amax

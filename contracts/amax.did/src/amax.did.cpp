@@ -137,7 +137,7 @@ using namespace std;
          return;
 
       pendings.emplace(_self, [&]( auto& row ) {
-         row.id               = order_id;
+         row.order_id      = order_id;
       });
    }
       
