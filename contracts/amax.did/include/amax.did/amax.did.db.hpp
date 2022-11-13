@@ -25,11 +25,11 @@ using namespace eosio;
 
 #define TBL struct [[eosio::table, eosio::contract("amax.did")]]
 #define NTBL(name) struct [[eosio::table(name), eosio::contract("amax.did")]]
-
-static constexpr eosio::name ORDER_STATUS_OK{"ok"_n };
-static constexpr eosio::name ORDER_STATUS_NOK{"nok"_n };
-static constexpr eosio::name ORDER_STATUS_PENDING{"pending"_n };
-
+namespace OrderStatus {
+    static constexpr eosio::name OK{"ok"_n };
+    static constexpr eosio::name NOK{"nok"_n };
+    static constexpr eosio::name PENDING{"pending"_n };
+}
 struct aplink_farm {
     name contract           = "aplink.farm"_n;
     uint64_t lease_id       = 5;    //nftone-farm-land

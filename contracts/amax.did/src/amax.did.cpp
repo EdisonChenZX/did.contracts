@@ -84,28 +84,28 @@ using namespace std;
       auto order_ptr     = orders.find(order_id);
       CHECKC( order_ptr != orders.end(), err::RECORD_NOT_FOUND, "order not exist. ");
 
-      if (status == ORDER_STATUS_PENDING) {
+      if (status == OrderStatus::PENDING) {
          _add_pending( order_id );
          return;
       }
 
       vendor_info_t::idx_t vendor_infos(_self, _self.value);
       auto vendor_info_idx       = vendor_infos.get_index<"vendoridx"_n>();
-      auto vendor_info_ptr      = vendor_info_idx.find(((uint128_t) order_ptr->vendor_account.value << 64) + order_ptr->kyc_level);
+      auto vendor_info_ptr       = vendor_info_idx.find(((uint128_t) order_ptr->vendor_account.value << 64) + order_ptr->kyc_level);
+      CHECKC( vendor_info_ptr != vendor_info_idx.end(), err::RECORD_EXISTING, "vendor info already exists");
 
-      CHECKC( vendor_info_ptr != vendor_info_idx.end(), err::RECORD_EXISTING, "vendor info already not exist. ");
+      switch( status.value ) {
+         case OrderStatus::OK.value:  {
+            auto did_quantity = nasset(1, vendor_info_ptr->nft_id);
+            auto quants = { did_quantity };
+            TRANSFER_D( _gstate.nft_contract, order_ptr->applicant, quants, "send did: " + to_string(order_id) );
+            if( vendor_info_ptr->user_reward_quant.amount > 0  )
+               _reward_farmer(vendor_info_ptr->user_reward_quant, order_ptr->applicant);
 
-      if (status == ORDER_STATUS_OK) {
-         auto did_quantity = nasset(1, vendor_info_ptr->nft_id);
-         vector<nasset> quants = { did_quantity };
-         TRANSFER_D( _gstate.nft_contract, order_ptr->applicant, quants, "send did: " + to_string(order_id) );
-         if( vendor_info_ptr->user_reward_quant.amount > 0  ) {
-            _reward_farmer(vendor_info_ptr->user_reward_quant, order_ptr->applicant);
+            break;
          }
-      } else if (status == ORDER_STATUS_NOK) {
-
-      } else {
-         CHECKC( false, err::PARAM_ERROR, "status is error" );
+         case OrderStatus::NOK.value: break;
+         default: CHECKC( false, err::PARAM_ERROR, "status incorrect" ); break;
       }
       
       if( vendor_info_ptr->user_charge_quant.amount > 0 ) {
@@ -130,11 +130,9 @@ using namespace std;
    }
 
    void amax_did::_add_pending( const uint64_t& order_id ) {
-
       pending_t::idx_t pendings(_self, _self.value);
       auto pending_ptr     = pendings.find(order_id);
-      if( pending_ptr != pendings.end()) 
-         return;
+      if( pending_ptr != pendings.end()) return;
 
       pendings.emplace(_self, [&]( auto& row ) {
          row.order_id      = order_id;
@@ -142,7 +140,6 @@ using namespace std;
    }
       
    void amax_did::_del_pending( const uint64_t& order_id ) {
-
       pending_t::idx_t pendings(_self, _self.value);
       auto pending_ptr     = pendings.find(order_id);
       if( pending_ptr == pendings.end()) 
