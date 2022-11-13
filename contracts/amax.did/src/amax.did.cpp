@@ -132,7 +132,7 @@ using namespace std;
    void amax_did::_add_pending( const uint64_t& order_id ) {
       pending_t::idx_t pendings(_self, _self.value);
       auto pending_ptr     = pendings.find(order_id);
-      if( pending_ptr != pendings.end()) return;
+      CHECKC( pending_ptr == pendings.end(), err::RECORD_EXISTING, "already pending" )
 
       pendings.emplace(_self, [&]( auto& row ) {
          row.order_id      = order_id;
