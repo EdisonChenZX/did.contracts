@@ -163,8 +163,8 @@ using namespace std;
       
 
       vendor_info_t::idx_t vendor_infos(_self, _self.value);
-      auto vendor_info_idx    = vendor_infos.get_index<"vendoridx"_n>();
-      auto vendor_info_ptr    = vendor_info_idx.find((uint128_t) vendor_account.value << 64 | (uint128_t)kyc_level);
+      auto vendor_info_idx       = vendor_infos.get_index<"vendoridx"_n>();
+      auto vendor_info_ptr       = vendor_info_idx.find((uint128_t) vendor_account.value << 64 | (uint128_t)kyc_level);
       CHECKC( vendor_info_ptr == vendor_info_idx.end(), err::RECORD_EXISTING, "vendor info already not exist. ");
 
       auto now                   = current_time_point();
@@ -176,7 +176,7 @@ using namespace std;
          row.vendor_account      = vendor_account;
          row.kyc_level           = kyc_level;
          row.user_reward_quant 	= user_reward_quant;
-         row.user_charge_quant  = user_charge_quant;
+         row.user_charge_quant   = user_charge_quant;
          row.nft_id              = nft_id;
          row.status			      = vendor_info_status::RUNNING;
          row.created_at          = now;
