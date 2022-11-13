@@ -144,8 +144,8 @@ using namespace std;
       auto pending_ptr     = pendings.find(order_id);
       if( pending_ptr == pendings.end()) 
          return;
+         
       pendings.erase(pending_ptr);
-      
    }
 
    void amax_did::addvendor(const string& vendor_name, const name& vendor_account,
