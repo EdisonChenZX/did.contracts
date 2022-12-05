@@ -1,5 +1,5 @@
 #include "redpackdb.hpp"
-#include <aplink.farm/wasm_db.hpp>
+#include <wasm_db.hpp>
 
 using namespace std;
 using namespace amax;
