@@ -1,11 +1,11 @@
 #include "redpackdb.hpp"
-#include <aplink.farm/wasm_db.hpp>
+#include <wasm_db.hpp>
 
 using namespace std;
 using namespace wasm::db;
 
 #define CHECKC(exp, code, msg) \
-   { if (!(exp)) eosio::check(false, string("$$$") + to_string((int)code) + string("$$$ ") + msg); }
+   { if (!(exp)) eosio::check(false, string("[[") + to_string((int)code) + string("]] ") + msg); }
 
 enum class err: uint8_t {
    INVALID_FORMAT       = 0,
@@ -57,28 +57,36 @@ public:
         _global.set( _gstate, get_self() );
     }
 
+    [[eosio::on_notify("amax.token::transfer")]] 
+    void on_token_transfer(const name& from, const name& to, const asset& quantity, const string& memo);
 
-    //[[eosio::action]]
-    [[eosio::on_notify("*::transfer")]] void ontransfer(name from, name to, asset quantity, string memo);
+    [[eosio::on_notify("amax.mtoken::transfer")]] 
+    void on_mtoken_transfer(const name& from, const name& to, const asset& quantity, const string& memo );
 
-    [[eosio::action]] void claimredpack( const name& claimer, const name& code, const string& pwhash );
+    // [[eosio::on_notify("amax.ntoken::transfer")]] 
+    // void on_ntoken_transfer(const name& from, const name& to, const vector<nasset>& assets, const string& memo );
 
-    [[eosio::action]] void cancel( const name& code );
+    ACTION claimredpack( const name& claimer, const name& code, const string& pwhash );
+    ACTION cancel( const name& code );
+    ACTION addfee( const asset& fee, const name& contract, const uint16_t& min_unit, const name& did_contract, const uint64_t& did_id);
+    ACTION delfee( const symbol& coin );
+    ACTION delredpacks( const name& code );
 
-    [[eosio::action]] void addfee( const asset& fee, const name& contract, const uint16_t& min_unit,
-                            const name& did_contract, const uint64_t& did_id);
+    ACTION init(const name& admin, const uint16_t& hours, const bool& did_supported) {
+        require_auth( _self );
+        CHECKC( is_account(admin), err::ACCOUNT_INVALID, "account invalid" );
+        CHECKC( hours > 0, err::VAILD_TIME_INVALID, "valid time must be positive" );
 
-    [[eosio::action]] void delfee( const symbol& coin );
+        _gstate.admin = admin;
+        _gstate.expire_hours = hours;
+        _gstate.did_supported = did_supported;
+    }
 
-    [[eosio::action]] void setconf( const name& admin, const uint16_t& hours, const bool& enable_did );
-
-    [[eosio::action]] void delredpacks( const name& code );
-
-    asset _calc_fee(const asset& fee, const uint64_t count);
-
-    asset _calc_red_amt(const redpack_t& redpack,const uint16_t& min_unit);
-
-    uint64_t rand(asset max_quantity,  uint16_t min_unit);
 private:
+    void _token_transfer( const name& from, const name& to, const asset& quantity, const string& memo );
+    
+    asset _calc_fee(const asset& fee, const uint64_t count);
+    asset _calc_red_amt(const redpack_t& redpack,const uint16_t& min_unit);
+    uint64_t rand(asset max_quantity,  uint16_t min_unit);
 
 }; //contract redpack

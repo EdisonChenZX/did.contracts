@@ -33,20 +33,19 @@ namespace wasm { namespace db {
 #define TG_TBL_NAME(name) [[eosio::table(name), eosio::contract("did.redpack")]]
 
 struct TG_TBL_NAME("global") global_t {
-    name tg_admin;
-    uint16_t expire_hours;
-    uint16_t data_failure_hours;
-    bool     enable_did;
-    EOSLIB_SERIALIZE( global_t, (tg_admin)(expire_hours)(data_failure_hours)(enable_did) )
+    name            admin;
+    uint16_t        expire_hours;
+    uint16_t        data_failure_hours;
+    bool            did_supported;
+
+    EOSLIB_SERIALIZE( global_t, (admin)(expire_hours)(data_failure_hours)(did_supported) )
 };
 typedef eosio::singleton< "global"_n, global_t > global_singleton;
 
-
 namespace redpack_status {
-    static constexpr eosio::name CREATED     = "created"_n;
-    static constexpr eosio::name FINISHED    = "finished"_n;
-    static constexpr eosio::name CANCELLED    = "cancelled"_n;
-
+    static constexpr eosio::name CREATED        = "created"_n;
+    static constexpr eosio::name FINISHED       = "finished"_n;
+    static constexpr eosio::name CANCELLED      = "cancelled"_n;
 };
 
 uint128_t get_unionid( const name& rec, uint64_t packid ) {
@@ -63,7 +62,7 @@ struct TG_TBL redpack_t {
     uint64_t        remain_count         = 0;
     asset           fee;
     name            status;
-    uint16_t        type;  //0 random,1 mean
+    uint16_t        type;  //0 random,1 mean fixed, 10: DID random, 11: DID fixed
     time_point      created_at;
     time_point      updated_at;
 
@@ -109,7 +108,7 @@ struct TG_TBL claim_t {
     EOSLIB_SERIALIZE( claim_t, (id)(red_pack_code)(sender)(receiver)(quantity)(claimed_at) )
 };
 
-struct TG_TBL fee_t {
+struct TG_TBL fee_conf_t {
     symbol          coin;         //co-PK
     asset           fee;
     name            contract_name;
@@ -117,14 +116,14 @@ struct TG_TBL fee_t {
     name            did_contract;
     uint64_t        did_id;
     
-    fee_t() {};
-    fee_t( const symbol& co ): coin( co ) {}
+    fee_conf_t() {};
+    fee_conf_t( const symbol& co ): coin( co ) {}
 
     uint64_t primary_key()const { return coin.code().raw(); }
 
-    typedef eosio::multi_index< "fees"_n,  fee_t > idx_t;
+    typedef eosio::multi_index< "feeconf"_n,  fee_conf_t > idx_t;
 
-    EOSLIB_SERIALIZE( fee_t, (coin)(fee)(contract_name)(min_unit)(did_contract)(did_id) );
+    EOSLIB_SERIALIZE( fee_conf_t, (coin)(fee)(contract_name)(min_unit)(did_contract)(did_id) );
 };
 
 

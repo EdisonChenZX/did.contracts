@@ -6,7 +6,7 @@
 
 #include <string>
 
-#include <did.ntoken/did.ntoken_db.hpp>
+#include <did.ntoken/did.ntoken.db.hpp>
 
 namespace amax {
 

@@ -7,13 +7,16 @@
 
 #include <string>
 
-#include <amax.did/amax.did_db.hpp>
+#include <amax.did/amax.did.db.hpp>
 #include <amax.mtoken/amax.mtoken.hpp>
+#include <wasm_db.hpp>
 
 namespace amax {
 
 using std::string;
 using std::vector;
+using namespace wasm::db;
+
 
 
 #define TRANSFER(bank, to, quantity, memo) \
@@ -62,11 +65,15 @@ namespace vendor_info_status {
  * Similarly, the `stats` multi-index table, holds instances of `currency_stats` objects for each row, which contains information about current supply, maximum supply, and the creator account for a symbol token. The `stats` table is scoped to the token symbol.  Therefore, when one queries the `stats` table for a token symbol the result is one single entry/row corresponding to the queried symbol token if it was previously created, or nothing, otherwise.
  */
 class [[eosio::contract("amax.did")]] amax_did : public contract {
+   
+   private:
+      dbc                 _dbc;
    public:
       using contract::contract;
-
+  
    amax_did(eosio::name receiver, eosio::name code, datastream<const char*> ds): contract(receiver, code, ds),
-        _global(get_self(), get_self().value)
+         _dbc(get_self()),
+         _global(get_self(), get_self().value)
     {
         _gstate = _global.exists() ? _global.get() : global_t{};
     }
@@ -77,20 +84,27 @@ class [[eosio::contract("amax.did")]] amax_did : public contract {
    [[eosio::on_notify("amax.token::transfer")]]
    void ontransfer(const name& from, const name& to, const asset& quant, const string& memo);
 
+   ACTION setadmin( const name& admin ) {
+      require_auth( _self );
+
+      _gstate.admin = admin;
+   }
+   
    ACTION init( const name& admin, const name& nft_contract, const name& fee_colletor, const uint64_t& lease_id);
 
-   ACTION finishdid(const uint64_t& order_id, const string& msg);
-
-   ACTION faildid(const  uint64_t& order_id, const string& reason);
+   ACTION setdidstatus (const uint64_t& order_id, const name& status, const string& msg );
 
    ACTION  addvendor(const string& vendor_name,
                      const name& vendor_account,
                      uint32_t& kyc_level,
                      const asset& user_reward_quant, 
-                     const asset& user_charge_amount,
+                     const asset& user_charge_quant,
                      const nsymbol& nft_id );
-    ACTION chgvendor(const uint64_t& vendor_id, const name& status);
 
+   ACTION chgvendor(const uint64_t& vendor_id, const name& status,
+                           const asset& user_reward_quant,
+                           const asset& user_charge_quant, 
+                           const nsymbol& nft_id ) ;
 
     ACTION auditlog( 
                      const uint64_t& order_id,
@@ -119,10 +133,15 @@ class [[eosio::contract("amax.did")]] amax_did : public contract {
                      const string& vendor_name,
                      const name& vendor_account,
                      const uint32_t& kyc_level,
-                     const asset& user_charge_amount,
+                     const asset& user_charge_quant,
                      const name& status,
                      const string& msg,
                      const time_point&   created_at
       );
+
+      void _add_pending(const uint64_t& order_id);
+
+      void _del_pending(const uint64_t& order_id);
+
 };
 } //namespace amax

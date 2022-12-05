@@ -1,7 +1,7 @@
 
 #include <amax.token.hpp>
 #include "redpack.hpp"
-#include <did.ntoken/did.ntoken_db.hpp>
+#include <did.ntoken/did.ntoken.db.hpp>
 #include "utils.hpp"
 #include <algorithm>
 #include <chrono>
@@ -28,7 +28,17 @@ inline int64_t get_precision(const asset &a) {
 }
 
 //issue-in op: transfer tokens to the contract and lock them according to the given plan
-void redpack::ontransfer( name from, name to, asset quantity, string memo )
+void redpack::on_token_transfer( const name& from, const name& to, const asset& quantity, const string& memo)
+{
+    _token_transfer( from, to, quantity, memo );
+}
+
+void redpack::on_mtoken_transfer( const name& from, const name& to, const asset& quantity, const string& memo)
+{
+    _token_transfer( from, to, quantity, memo );
+}
+
+void redpack::_token_transfer( const name& from, const name& to, const asset& quantity, const string& memo )
 {
     if (from == _self || to != _self) return;
 
@@ -55,10 +65,10 @@ void redpack::ontransfer( name from, name to, asset quantity, string memo )
     if((redpack_type)type == redpack_type::DID_RANDOM || 
         (redpack_type)type == redpack_type::DID_MEAN){
 
-        CHECKC(  _gstate.enable_did, err::UNDER_MAINTENANCE, "did redpack is under maintenance" );    
+        CHECKC(  _gstate.did_supported, err::UNDER_MAINTENANCE, "did redpack is under maintenance" );    
     }
 
-    auto fee_info = fee_t(quantity.symbol);
+    auto fee_info = fee_conf_t(quantity.symbol);
     CHECKC( _db.get(fee_info), err::FEE_NOT_FOUND, "fee not found" );
 
     asset fee = _calc_fee( fee_info.fee, count );
@@ -88,14 +98,14 @@ void redpack::ontransfer( name from, name to, asset quantity, string memo )
 
 void redpack::claimredpack( const name& claimer, const name& code, const string& pwhash )
 {
-    require_auth( _gstate.tg_admin );
+    require_auth( _gstate.admin );
 
     redpack_t redpack(code);
     CHECKC( _db.get(redpack), err::RECORD_NO_FOUND, "redpack not found" );
     CHECKC( redpack.pw_hash == pwhash, err::PWHASH_INVALID, "incorrect password" );
     CHECKC( redpack.status == redpack_status::CREATED, err::EXPIRED, "redpack has expired" );
     
-    fee_t fee_info(redpack.total_quantity.symbol);
+    fee_conf_t fee_info(redpack.total_quantity.symbol);
     CHECKC( _db.get(fee_info), err::FEE_NOT_FOUND, "fee not found" );
 
     bool is_auth = false;
@@ -153,12 +163,12 @@ void redpack::claimredpack( const name& claimer, const name& code, const string&
 
 void redpack::cancel( const name& code )
 {
-    require_auth( _gstate.tg_admin );
+    require_auth( _gstate.admin );
     redpack_t redpack(code);
     CHECKC( _db.get(redpack), err::RECORD_NO_FOUND, "redpack not found" );
     CHECKC( current_time_point() > redpack.created_at + eosio::hours(_gstate.expire_hours), err::NOT_EXPIRED, "expiration date is not reached" );
     if(redpack.status == redpack_status::CREATED){
-        fee_t fee_info(redpack.total_quantity.symbol);
+        fee_conf_t fee_info(redpack.total_quantity.symbol);
         CHECKC( _db.get(fee_info), err::FEE_NOT_FOUND, "fee not found" );
         asset cancelamt = redpack.remain_quantity + fee_info.fee * redpack.remain_count;
         TRANSFER_OUT(fee_info.contract_name, redpack.sender, cancelamt, string("red pack cancel transfer"));
@@ -180,7 +190,7 @@ void redpack::addfee( const asset& fee, const name& contract, const uint16_t& mi
     CHECKC( fee.amount >= 0, err::FEE_NOT_POSITIVE, "fee must be positive" );
     CHECKC( get_precision(fee) >= power10(min_unit), err::MIN_UNIT_INVALID, "min unit not greater than coin precision" );
 
-    auto fee_info = fee_t(fee.symbol);
+    auto fee_info = fee_conf_t(fee.symbol);
     fee_info.fee = fee;
     fee_info.contract_name = contract;
     fee_info.min_unit = min_unit;
@@ -192,21 +202,10 @@ void redpack::addfee( const asset& fee, const name& contract, const uint16_t& mi
 void redpack::delfee( const symbol& coin )
 {
     require_auth( _self );
-    auto fee_info = fee_t(coin);
+    auto fee_info = fee_conf_t(coin);
     CHECKC( _db.get(fee_info), err::FEE_NOT_FOUND, "coin not found" );
 
     _db.del( fee_info );
-}
-
-void redpack::setconf(const name& admin, const uint16_t& hours, const bool& enable_did)
-{
-    require_auth( _self );
-    CHECKC( is_account(admin), err::ACCOUNT_INVALID, "account invalid" );
-    CHECKC( hours > 0, err::VAILD_TIME_INVALID, "valid time must be positive" );
-
-    _gstate.tg_admin = admin;
-    _gstate.expire_hours = hours;
-    _gstate.enable_did = enable_did;
 }
 
 void redpack::delredpacks(const name& code){
