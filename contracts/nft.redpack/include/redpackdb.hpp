@@ -6,9 +6,9 @@
 #include <eosio/singleton.hpp>
 #include <eosio/system.hpp>
 #include <eosio/time.hpp>
-#include <amax.ntoken/amax.ntoken.db.hpp>
-#include <amax.ntoken/amax.nsymbol.hpp>
-#include <amax.ntoken/amax.nasset.hpp>
+#include "amax.ntoken/amax.ntoken.db.hpp"
+#include "amax.ntoken/amax.nsymbol.hpp"
+#include "amax.ntoken/amax.nasset.hpp"
 using namespace eosio;
 using namespace std;
 using namespace amax;

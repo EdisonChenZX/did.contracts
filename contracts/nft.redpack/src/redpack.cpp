@@ -1,7 +1,7 @@
 
 #include <amax.token.hpp>
 #include "redpack.hpp"
-#include <amax.ntoken/amax.ntoken.hpp>
+#include "amax.ntoken/amax.ntoken.hpp"
 #include <utils.hpp>
 #include <algorithm>
 #include <chrono>
