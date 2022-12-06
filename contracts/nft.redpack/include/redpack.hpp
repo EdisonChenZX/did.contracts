@@ -65,7 +65,7 @@ public:
 
 
     //[[eosio::action]]
-    [[eosio::on_notify("amax.token::transfer")]] void feetransfer(name from, name to, asset quantity, string memo);
+    [[eosio::on_notify("*::transfer")]] void feetransfer(name from, name to, asset quantity, string memo);
     
     [[eosio::on_notify("*::transfer")]] void ontransfer( const name& from, const name& to, const vector<nasset>& assets, const string& memo  );
 
