@@ -39,24 +39,25 @@ void redpack::feetransfer( name from, name to, asset quantity, string memo )
 	CHECKC( quantity.amount > 0, err::NOT_POSITIVE, "quantity must be positive" )
 
     //memo params format:
-    //code : id : parent_id : quantity
+    //code : id : parent_id : quantity：nft_contract
     auto parts = split( memo, ":" );
-    CHECKC( parts.size() == 4, err::INVALID_FORMAT,"Expected format 'code : id : parent_id : count'" );
+    CHECKC( parts.size() == 5, err::INVALID_FORMAT,"Expected format 'code : id : parent_id : count'" );
 
     auto code = name(parts[0]);
     auto id = to_uint64(parts[1], "id parse uint error");
     auto parent_id = to_uint64(parts[2], "parent_id parse uint error");
     auto nft_quantity = to_int64(parts[3], "quantity parse int error");
+    auto nft_contract = name(parts[4]);
 
     redpack_t redpack(code);
     CHECKC( !_db.get(redpack), err::RED_PACK_EXIST, "code is already exists" );
     
-    nsymbol nsym(id, parent_id);
-    fee_t fee_info(nsym);
+    fee_t fee_info(nft_contract);
     CHECKC( _db.get(fee_info), err::FEE_NOT_FOUND, "fee not found" );
     CHECKC( quantity >= _calc_fee(fee_info.fee, nft_quantity), err::QUANTITY_NOT_ENOUGH , "not enough " );
-
-    int64_t supply_nasset = ntoken::get_supply(fee_info.redpack_contract_name, nsym);
+    
+    nsymbol nsym(id, parent_id);
+    int64_t supply_nasset = ntoken::get_supply(nft_contract, nsym);
     CHECKC( supply_nasset > 0, err::RECORD_NO_FOUND, "nft not found" );
     
     nasset redpack_quantity(nft_quantity, nsym);
@@ -69,6 +70,7 @@ void redpack::feetransfer( name from, name to, asset quantity, string memo )
         row.status			            = redpack_status::INIT;
         row.total_quantity              = redpack_quantity;
         row.remain_quantity		        = redpack_quantity;
+        row.nft_contract		        = nft_contract;
         row.created_at                  = time_point_sec( current_time_point() );
         row.updated_at                  = time_point_sec( current_time_point() );
    });
@@ -110,9 +112,6 @@ void redpack::claimredpack( const name& claimer, const name& code, const string&
     CHECKC( redpack.pw_hash == pwhash, err::PWHASH_INVALID, "incorrect password" );
     CHECKC( redpack.status == redpack_status::CREATED, err::STATUS_ERROR, "redpack status error" );
     
-    fee_t fee_info(redpack.total_quantity.symbol);
-    CHECKC( _db.get(fee_info), err::FEE_NOT_FOUND, "fee not found" );
-
     claim_t::idx_t claims(_self, _self.value);
     auto claims_index = claims.get_index<"unionid"_n>();
     uint128_t sec_index = get_unionid(claimer, code.value);
@@ -121,7 +120,7 @@ void redpack::claimredpack( const name& claimer, const name& code, const string&
 
     nasset redpack_quantity(1, redpack.total_quantity.symbol);
     vector<nasset> redpack_quants = { redpack_quantity };
-    NFT_TRANSFER(fee_info.redpack_contract_name, claimer, redpack_quants, string("red pack transfer"));
+    NFT_TRANSFER(redpack.nft_contract, claimer, redpack_quants, string("red pack transfer"));
 
     redpack.remain_quantity -= redpack_quantity;
     redpack.updated_at = time_point_sec( current_time_point() );
@@ -148,14 +147,14 @@ void redpack::cancel( const name& code )
     CHECKC( _db.get(redpack), err::RECORD_NO_FOUND, "redpack not found" );
     CHECKC( current_time_point() > redpack.created_at + eosio::hours(_gstate.expire_hours), err::NOT_EXPIRED, "expiration date is not reached" );
     if(redpack.status == redpack_status::CREATED){
-        fee_t fee_info(redpack.total_quantity.symbol);
+        fee_t fee_info(redpack.nft_contract);
         CHECKC( _db.get(fee_info), err::FEE_NOT_FOUND, "fee not found" );
 
         vector<nasset> redpack_quants = { redpack.remain_quantity };
-        NFT_TRANSFER(fee_info.redpack_contract_name, redpack.sender, redpack_quants, string("red pack cancel transfer"));
+        NFT_TRANSFER(redpack.nft_contract, redpack.sender, redpack_quants, string("red pack cancel transfer"));
 
         asset cancelamt = _calc_fee(fee_info.fee, redpack.remain_quantity.amount);
-        TRANSFER_OUT(fee_info.fee_contract_name, redpack.sender, cancelamt, string("red pack cancel transfer"));
+        TRANSFER_OUT(fee_info.fee_contract, redpack.sender, cancelamt, string("red pack cancel transfer"));
     }
     _db.del(redpack);
     claim_t::idx_t claims(_self, _self.value);
@@ -167,23 +166,22 @@ void redpack::cancel( const name& code )
     }
 }
 
-void redpack::addfee( const nsymbol& nft_coin, const asset& fee, const name& fee_contract, const name& redpack_contract)
+void redpack::addfee( const asset& fee, const name& fee_contract, const name& nft_contract)
 {
     require_auth( _self );
     CHECKC( fee.amount >= 0, err::FEE_NOT_POSITIVE, "fee must be positive" );
 
-    auto fee_info = fee_t(nft_coin);
+    auto fee_info = fee_t(nft_contract);
     fee_info.fee = fee;
-    fee_info.fee_contract_name = fee_contract;
-    fee_info.redpack_contract_name = redpack_contract;
+    fee_info.fee_contract = fee_contract;
     _db.set( fee_info, _self );
 }
 
-void redpack::delfee( const nsymbol& coin )
+void redpack::delfee( const name& nft_contract )
 {
     require_auth( _self );
-    auto fee_info = fee_t(coin);
-    CHECKC( _db.get(fee_info), err::FEE_NOT_FOUND, "coin not found" );
+    auto fee_info = fee_t(nft_contract);
+    CHECKC( _db.get(fee_info), err::FEE_NOT_FOUND, "fee not found" );
 
     _db.del( fee_info );
 }

@@ -73,9 +73,9 @@ public:
 
     [[eosio::action]] void cancel( const name& code );
 
-    [[eosio::action]] void addfee( const nsymbol& nft_coin, const asset& fee, const name& fee_contract, const name& redpack_contract);
+    [[eosio::action]] void addfee( const asset& fee, const name& fee_contract, const name& nft_contract);
 
-    [[eosio::action]] void delfee( const nsymbol& coin );
+    [[eosio::action]] void delfee( const name& nft_contract );
 
     [[eosio::action]] void setconf( const name& admin, const uint16_t& hours, const bool& enable_did );
 

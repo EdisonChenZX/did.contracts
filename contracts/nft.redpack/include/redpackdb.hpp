@@ -66,6 +66,7 @@ struct TG_TBL redpack_t {
     asset           fee;
     name            status;
     uint16_t        type;  //0 random,1 mean
+    name            nft_contract;
     time_point      created_at;
     time_point      updated_at;
 
@@ -83,7 +84,7 @@ struct TG_TBL redpack_t {
     > idx_t;
 
     EOSLIB_SERIALIZE( redpack_t, (code)(sender)(pw_hash)(total_quantity)(remain_quantity)
-                                    (fee)(status)(type)(created_at)(updated_at) )
+                                    (fee)(status)(type)(nft_contract)(created_at)(updated_at) )
 };
 
 struct TG_TBL claim_t {
@@ -112,19 +113,18 @@ struct TG_TBL claim_t {
 };
 
 struct TG_TBL fee_t {
-    nsymbol         coin;         //co-PK
+    name            nft_contract;
     asset           fee;
-    name            fee_contract_name;
-    name            redpack_contract_name;
+    name            fee_contract;
     
     fee_t() {};
-    fee_t( const nsymbol& co ): coin( co ) {}
+    fee_t( const name& contract_name ): nft_contract( contract_name ) {}
 
-    uint64_t primary_key()const { return coin.raw(); }
+    uint64_t primary_key()const { return nft_contract.value; }
 
     typedef eosio::multi_index< "fees"_n,  fee_t > idx_t;
 
-    EOSLIB_SERIALIZE( fee_t, (coin)(fee)(fee_contract_name)(redpack_contract_name) );
+    EOSLIB_SERIALIZE( fee_t, (nft_contract)(fee)(fee_contract) );
 };
 
 
