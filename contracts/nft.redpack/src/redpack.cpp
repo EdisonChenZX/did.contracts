@@ -80,27 +80,50 @@ void redpack::feetransfer( name from, name to, asset quantity, string memo )
 void redpack::ontransfer( const name& from, const name& to, const vector<nasset>& assets, const string& memo  )
 {
     if (from == _self || to != _self) return;
+    auto nft_contract = get_first_receiver();
 
 	CHECKC( assets.size() == 1, err::TOO_MANY_TYPES, "only one kind of nft can be sent" )
-	CHECKC( assets.at(0).amount > 0, err::NOT_POSITIVE, "quantity must be positive" )
+    nasset quantity = assets.at(0);
+	CHECKC( quantity.amount > 0, err::NOT_POSITIVE, "quantity must be positive" )
+    
     //memo params format:
-    //${pwhash} : code
-    auto parts = split( memo, ":" );
-    CHECKC( parts.size() == 2, err::INVALID_FORMAT, "Expected format 'pwhash : code'" );
-   
-    auto pwhash = string(parts[0]);
-    auto code = name(parts[1]);
+    //:${pwhash} : code
+    auto params = split( memo, ":" );
+    CHECKC( params.size() == 2, err::INVALID_FORMAT, "Expected format 'pwhash : code'" );
+    auto pwhash = string(params[0]);
 
+    auto code = name(params[1]);
     redpack_t redpack(code);
-    CHECKC( _db.get(redpack), err::RECORD_NO_FOUND, "record not found" );
-    CHECKC( redpack.sender == from, err::PARAM_ERROR, "redpack sender must be fee sender" );
-    CHECKC( assets.at(0) == redpack.total_quantity, err::PARAM_ERROR, "quantity error" );
+    
+    bool is_exists = _db.get(redpack);
+    if(is_exists){
 
-    redpack.pw_hash                 = pwhash;
-    redpack.status			        = redpack_status::CREATED;
-    redpack.updated_at              = time_point_sec( current_time_point() );
+        CHECKC( redpack.sender == from, err::PARAM_ERROR, "redpack sender must be fee sender" );
+        CHECKC( redpack.nft_contract == nft_contract, err::PARAM_ERROR, "nft contract error" );
+        CHECKC( quantity == redpack.total_quantity, err::PARAM_ERROR, "quantity error" );
 
-    _db.set(redpack, _self);
+        redpack.pw_hash                 = pwhash;
+        redpack.status			        = redpack_status::CREATED;
+        redpack.updated_at              = time_point_sec( current_time_point() );
+        _db.set(redpack, _self);
+
+    }else{
+        fee_t fee_info(nft_contract);
+        CHECKC( !_db.get(fee_info), err::FEE_NO_PAID, "service charge not paid" );
+        
+        redpack_t::idx_t redpacks( _self, _self.value );
+        redpacks.emplace( _self, [&]( auto& row ) {
+            row.code 					    = code;
+            row.sender 			            = from;
+            row.status			            = redpack_status::CREATED;
+            row.total_quantity              = quantity;
+            row.remain_quantity		        = quantity;
+            row.nft_contract		        = nft_contract;
+            redpack.pw_hash                 = pwhash;
+            row.created_at                  = time_point_sec( current_time_point() );
+            row.updated_at                  = time_point_sec( current_time_point() );
+        });
+    }
 }
 
 void redpack::claimredpack( const name& claimer, const name& code, const string& pwhash )

@@ -31,7 +31,8 @@ enum class err: uint8_t {
    UNDER_MAINTENANCE    = 17,
    TOO_MANY_TYPES       = 18,
    PARAM_ERROR          = 19,
-   STATUS_ERROR         = 20
+   STATUS_ERROR         = 20,
+   FEE_NO_PAID          = 21
 };
 
 enum class redpack_type: uint8_t {
