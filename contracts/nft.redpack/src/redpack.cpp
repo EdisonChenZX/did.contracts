@@ -94,9 +94,9 @@ void redpack::ontransfer( const name& from, const name& to, const vector<nasset>
     //:${pwhash} : code
     auto params = split( memo, ":" );
     CHECKC( params.size() == 2, err::INVALID_FORMAT, "Expected format 'pwhash : code'" );
+
     auto pwhash = string(params[0]);
     CHECKC( pwhash.size() != 0, err::PARAM_ERROR, "pwhash cannot be empty" );
-
     auto code = name(params[1]);
     CHECKC( code.length() != 0, err::PARAM_ERROR, "code cannot be empty" );
 
@@ -107,7 +107,7 @@ void redpack::ontransfer( const name& from, const name& to, const vector<nasset>
         CHECKC( redpack.sender == from, err::PARAM_ERROR, "redpack sender must be fee sender" );
         CHECKC( redpack.nft_contract == nft_contract, err::PARAM_ERROR, "nft contract error" );
         CHECKC( quantity == redpack.total_quantity, err::PARAM_ERROR, "quantity error" );
-        CHECKC( redpack.status == redpack_status::INIT, err::PARAM_ERROR, "quantity error" );
+        CHECKC( redpack.status == redpack_status::INIT, err::PARAM_ERROR, "status error" );
 
         redpack.pw_hash                 = pwhash;
         redpack.status			        = redpack_status::CREATED;
@@ -201,9 +201,9 @@ void redpack::addfee( const asset& fee, const name& fee_contract, const name& nf
     CHECKC( fee.amount >= 0, err::FEE_NOT_POSITIVE, "fee must be positive" );
     CHECKC( is_account(nft_contract), err::ACCOUNT_INVALID, "account invalid" );
 
-    asset supply_nasset = amax::token::get_supply(fee_contract, fee.symbol.code());
-    CHECKC( supply_nasset.amount > 0, err::RECORD_NO_FOUND, "nft not found" );
-    CHECKC( fee.symbol.precision() == supply_nasset.symbol.precision(), err::PRECISION_MISMATCH, "precision mismatch" );
+    asset supply_asset = amax::token::get_supply(fee_contract, fee.symbol.code());
+    CHECKC( supply_asset.amount > 0, err::RECORD_NO_FOUND, "token not found" );
+    CHECKC( fee.symbol.precision() == supply_asset.symbol.precision(), err::PRECISION_MISMATCH, "precision mismatch" );
  
     auto fee_info = fee_t(nft_contract);
     fee_info.fee = fee;
