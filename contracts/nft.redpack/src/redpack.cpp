@@ -44,7 +44,7 @@ void redpack::feetransfer( name from, name to, asset quantity, string memo )
     CHECKC( parts.size() == 5, err::INVALID_FORMAT,"Expected format 'code : id : parent_id : count'" );
 
     auto code = name(parts[0]);
-    CHECKC( code.length() == 0, err::PARAM_ERROR, "code cannot be empty" );
+    CHECKC( code.length() != 0, err::PARAM_ERROR, "code cannot be empty" );
 
     auto id = to_uint64(parts[1], "id parse uint error");
     auto parent_id = to_uint64(parts[2], "parent_id parse uint error");
@@ -95,10 +95,10 @@ void redpack::ontransfer( const name& from, const name& to, const vector<nasset>
     auto params = split( memo, ":" );
     CHECKC( params.size() == 2, err::INVALID_FORMAT, "Expected format 'pwhash : code'" );
     auto pwhash = string(params[0]);
-    CHECKC( pwhash.size() == 0, err::PARAM_ERROR, "pwhash cannot be empty" );
+    CHECKC( pwhash.size() != 0, err::PARAM_ERROR, "pwhash cannot be empty" );
 
     auto code = name(params[1]);
-    CHECKC( code.length() == 0, err::PARAM_ERROR, "code cannot be empty" );
+    CHECKC( code.length() != 0, err::PARAM_ERROR, "code cannot be empty" );
 
     redpack_t redpack(code);
     bool is_exists = _db.get(redpack);
@@ -121,11 +121,11 @@ void redpack::ontransfer( const name& from, const name& to, const vector<nasset>
         redpacks.emplace( _self, [&]( auto& row ) {
             row.code 					    = code;
             row.sender 			            = from;
+            row.pw_hash                     = pwhash;
             row.status			            = redpack_status::CREATED;
             row.total_quantity              = quantity;
             row.remain_quantity		        = quantity;
             row.nft_contract		        = nft_contract;
-            redpack.pw_hash                 = pwhash;
             row.created_at                  = time_point_sec( current_time_point() );
             row.updated_at                  = time_point_sec( current_time_point() );
         });
