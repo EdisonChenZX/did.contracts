@@ -44,9 +44,14 @@ void redpack::feetransfer( name from, name to, asset quantity, string memo )
     CHECKC( parts.size() == 5, err::INVALID_FORMAT,"Expected format 'code : id : parent_id : count'" );
 
     auto code = name(parts[0]);
+    CHECKC( code.length() == 0, err::PARAM_ERROR, "code cannot be empty" );
+
     auto id = to_uint64(parts[1], "id parse uint error");
     auto parent_id = to_uint64(parts[2], "parent_id parse uint error");
+
     auto nft_quantity = to_int64(parts[3], "quantity parse int error");
+    CHECKC( nft_quantity > 0, err::PARAM_ERROR, "nft quantity must be greater than zero" );
+
     auto nft_contract = name(parts[4]);
 
     redpack_t redpack(code);
@@ -57,11 +62,10 @@ void redpack::feetransfer( name from, name to, asset quantity, string memo )
     CHECKC( quantity >= _calc_fee(fee_info.fee, nft_quantity), err::QUANTITY_NOT_ENOUGH , "not enough " );
     
     nsymbol nsym(id, parent_id);
-    int64_t supply_nasset = ntoken::get_supply(nft_contract, nsym);
-    CHECKC( supply_nasset > 0, err::RECORD_NO_FOUND, "nft not found" );
+    nasset balance_nasset = ntoken::get_balance(nft_contract, from, nsym);
+    CHECKC( balance_nasset.amount >= nft_quantity, err::QUANTITY_NOT_ENOUGH, "nft balance not enough" );
     
     nasset redpack_quantity(nft_quantity, nsym);
-
     redpack_t::idx_t redpacks( _self, _self.value );
     redpacks.emplace( _self, [&]( auto& row ) {
         row.code 					    = code;
@@ -91,25 +95,27 @@ void redpack::ontransfer( const name& from, const name& to, const vector<nasset>
     auto params = split( memo, ":" );
     CHECKC( params.size() == 2, err::INVALID_FORMAT, "Expected format 'pwhash : code'" );
     auto pwhash = string(params[0]);
+    CHECKC( pwhash.size() == 0, err::PARAM_ERROR, "pwhash cannot be empty" );
 
     auto code = name(params[1]);
-    redpack_t redpack(code);
-    
-    bool is_exists = _db.get(redpack);
-    if(is_exists){
+    CHECKC( code.length() == 0, err::PARAM_ERROR, "code cannot be empty" );
 
+    redpack_t redpack(code);
+    bool is_exists = _db.get(redpack);
+
+    if(is_exists){
         CHECKC( redpack.sender == from, err::PARAM_ERROR, "redpack sender must be fee sender" );
         CHECKC( redpack.nft_contract == nft_contract, err::PARAM_ERROR, "nft contract error" );
         CHECKC( quantity == redpack.total_quantity, err::PARAM_ERROR, "quantity error" );
+        CHECKC( redpack.status == redpack_status::INIT, err::PARAM_ERROR, "quantity error" );
 
         redpack.pw_hash                 = pwhash;
         redpack.status			        = redpack_status::CREATED;
         redpack.updated_at              = time_point_sec( current_time_point() );
         _db.set(redpack, _self);
-
     }else{
         fee_t fee_info(nft_contract);
-        CHECKC( !_db.get(fee_info), err::FEE_NO_PAID, "service charge not paid" );
+        CHECKC( (_db.get(fee_info) && fee_info.fee.amount == 0), err::FEE_NO_PAID, "service charge not paid" );
         
         redpack_t::idx_t redpacks( _self, _self.value );
         redpacks.emplace( _self, [&]( auto& row ) {
@@ -193,7 +199,12 @@ void redpack::addfee( const asset& fee, const name& fee_contract, const name& nf
 {
     require_auth( _self );
     CHECKC( fee.amount >= 0, err::FEE_NOT_POSITIVE, "fee must be positive" );
+    CHECKC( is_account(nft_contract), err::ACCOUNT_INVALID, "account invalid" );
 
+    asset supply_nasset = amax::token::get_supply(fee_contract, fee.symbol.code());
+    CHECKC( supply_nasset.amount > 0, err::RECORD_NO_FOUND, "nft not found" );
+    CHECKC( fee.symbol.precision() == supply_nasset.symbol.precision(), err::PRECISION_MISMATCH, "precision mismatch" );
+ 
     auto fee_info = fee_t(nft_contract);
     fee_info.fee = fee;
     fee_info.fee_contract = fee_contract;

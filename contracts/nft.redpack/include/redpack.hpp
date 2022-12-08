@@ -32,7 +32,8 @@ enum class err: uint8_t {
    TOO_MANY_TYPES       = 18,
    PARAM_ERROR          = 19,
    STATUS_ERROR         = 20,
-   FEE_NO_PAID          = 21
+   FEE_NO_PAID          = 21,
+   PRECISION_MISMATCH   = 22
 };
 
 enum class redpack_type: uint8_t {
@@ -66,7 +67,7 @@ public:
 
 
     //[[eosio::action]]
-    [[eosio::on_notify("*::transfer")]] void feetransfer(name from, name to, asset quantity, string memo);
+    [[eosio::on_notify("amax.token::transfer")]] void feetransfer(name from, name to, asset quantity, string memo);
     
     [[eosio::on_notify("*::transfer")]] void ontransfer( const name& from, const name& to, const vector<nasset>& assets, const string& memo  );
 
