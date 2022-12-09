@@ -187,6 +187,7 @@ void redpack::cancel( const name& code )
 void redpack::delclaims( const uint64_t& max_rows )
 {
     require_auth( _gstate.admin );
+    
     set<name> is_not_exist;
 
     claim_t::idx_t claim_idx(_self, _self.value);
@@ -197,7 +198,6 @@ void redpack::delclaims( const uint64_t& max_rows )
 
         bool redpack_not_existed = is_not_exist.count(claim_itr->red_pack_code) > 0 ? true : false;
         if (!redpack_not_existed){
-
             redpack_t redpack(claim_itr->red_pack_code);
             redpack_not_existed = !_db.get(redpack);
            
