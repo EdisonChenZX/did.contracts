@@ -184,7 +184,7 @@ void redpack::cancel( const name& code )
         NFT_TRANSFER(redpack.nft_contract, redpack.sender, redpack_quants, string("red pack cancel transfer"));
         
         if(redpack.fee.amount > 0){
-            asset cancelamt = _calc_fee(fee_info.fee, redpack.remain_quantity.amount);
+            asset cancelamt = redpack.fee / redpack.total_quantity.amount * redpack.remain_quantity.amount;
             TRANSFER_OUT(fee_info.fee_contract, redpack.sender, cancelamt, string("red pack cancel transfer"));
         }
     }
