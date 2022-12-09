@@ -193,7 +193,6 @@ void redpack::cancel( const name& code )
 
 void redpack::delclaims( const uint64_t& max_rows )
 {
-   
     require_auth( _gstate.admin );
     
     set<name> is_not_exist;
