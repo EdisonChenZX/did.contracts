@@ -68,6 +68,7 @@ public:
 
     ACTION claimredpack( const name& claimer, const name& code, const string& pwhash );
     ACTION cancel( const name& code );
+    ACTION delclaims( const uint64_t& max_rows );
     ACTION addfee( const asset& fee, const name& contract, const uint16_t& min_unit, const name& did_contract, const uint64_t& did_id);
     ACTION delfee( const symbol& coin );
     ACTION delredpacks( const name& code );

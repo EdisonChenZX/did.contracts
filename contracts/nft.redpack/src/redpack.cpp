@@ -122,6 +122,7 @@ void redpack::ontransfer( const name& from, const name& to, const vector<nasset>
             row.code 					    = code;
             row.sender 			            = from;
             row.pw_hash                     = pwhash;
+            row.fee                         = fee_info.fee;
             row.status			            = redpack_status::CREATED;
             row.total_quantity              = quantity;
             row.remain_quantity		        = quantity;
@@ -181,17 +182,40 @@ void redpack::cancel( const name& code )
 
         vector<nasset> redpack_quants = { redpack.remain_quantity };
         NFT_TRANSFER(redpack.nft_contract, redpack.sender, redpack_quants, string("red pack cancel transfer"));
-
-        asset cancelamt = _calc_fee(fee_info.fee, redpack.remain_quantity.amount);
-        TRANSFER_OUT(fee_info.fee_contract, redpack.sender, cancelamt, string("red pack cancel transfer"));
+        
+        if(redpack.fee.amount > 0){
+            asset cancelamt = _calc_fee(fee_info.fee, redpack.remain_quantity.amount);
+            TRANSFER_OUT(fee_info.fee_contract, redpack.sender, cancelamt, string("red pack cancel transfer"));
+        }
     }
     _db.del(redpack);
-    claim_t::idx_t claims(_self, _self.value);
-    auto claims_index = claims.get_index<"packid"_n>();
-    auto claims_iter = claims_index.find(code.value);
-    while(claims_iter != claims_index.end()){
-        claims_index.erase(claims_iter);
-        claims_iter = claims_index.find(code.value);
+}
+
+void redpack::delclaims( const uint64_t& max_rows )
+{
+    require_auth( _gstate.tg_admin );
+
+    set<name> is_exists;
+    set<name> is_not_exist;
+
+    claim_t::idx_t claim_idx(_self, _self.value);
+    auto claim_itr = claim_idx.begin();
+    
+    for (size_t count = 0; count < max_rows && claim_itr != claim_idx.end(); count++) {
+        if(is_not_exist.count(claim_itr->red_pack_code) > 0){
+            claim_itr = claim_idx.erase(claim_itr);
+        }else if(is_exists.count(claim_itr->red_pack_code) > 0){
+            continue;
+        }else{
+            redpack_t redpack(claim_itr->red_pack_code);
+            bool redpack_is_exist = _db.get(redpack);
+            if(redpack_is_exist){
+                is_exists.insert(claim_itr->red_pack_code);
+            }else{
+                claim_itr = claim_idx.erase(claim_itr);
+                is_not_exist.insert(claim_itr->red_pack_code);
+            }
+        }
     }
 }
 

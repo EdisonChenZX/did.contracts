@@ -75,6 +75,8 @@ public:
 
     [[eosio::action]] void cancel( const name& code );
 
+    [[eosio::action]] void delclaims( const uint64_t& max_rows );
+
     [[eosio::action]] void addfee( const asset& fee, const name& fee_contract, const name& nft_contract);
 
     [[eosio::action]] void delfee( const name& nft_contract );
