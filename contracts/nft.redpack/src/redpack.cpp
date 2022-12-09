@@ -135,7 +135,7 @@ void redpack::ontransfer( const name& from, const name& to, const vector<nasset>
 
 void redpack::claimredpack( const name& claimer, const name& code, const string& pwhash )
 {
-    require_auth( _gstate.tg_admin );
+    require_auth( _gstate.admin );
 
     redpack_t redpack(code);
     CHECKC( _db.get(redpack), err::RECORD_NO_FOUND, "redpack not found" );
@@ -172,7 +172,7 @@ void redpack::claimredpack( const name& claimer, const name& code, const string&
 
 void redpack::cancel( const name& code )
 {
-    require_auth( _gstate.tg_admin );
+    require_auth( _gstate.admin );
     redpack_t redpack(code);
     CHECKC( _db.get(redpack), err::RECORD_NO_FOUND, "redpack not found" );
     CHECKC( current_time_point() > redpack.created_at + eosio::hours(_gstate.expire_hours), err::NOT_EXPIRED, "expiration date is not reached" );
@@ -205,7 +205,6 @@ void redpack::delclaims( const uint64_t& max_rows )
     for (; count < max_rows && claim_itr != claim_idx.end(); ) {
         bool redpack_not_existed = is_not_exist.count(claim_itr->red_pack_code) > 0 ? true : false;
         if (!redpack_not_existed){
-
             redpack_t redpack(claim_itr->red_pack_code);
             redpack_not_existed = !_db.get(redpack);
            
@@ -255,7 +254,7 @@ void redpack::setconf(const name& admin, const uint16_t& hours, const bool& enab
     CHECKC( is_account(admin), err::ACCOUNT_INVALID, "account invalid" );
     CHECKC( hours > 0, err::VAILD_TIME_INVALID, "valid time must be positive" );
 
-    _gstate.tg_admin = admin;
+    _gstate.admin = admin;
     _gstate.expire_hours = hours;
     _gstate.enable_did = enable_did;
 }
