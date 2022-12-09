@@ -25,7 +25,8 @@ enum class err: uint8_t {
    MIN_UNIT_INVALID     = 14,
    RED_PACK_EXIST       = 15,
    DID_NOT_AUTH         = 16,
-   UNDER_MAINTENANCE    = 17
+   UNDER_MAINTENANCE    = 17,
+   DEL_INVALID          = 18
 };
 
 enum class redpack_type: uint8_t {

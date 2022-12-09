@@ -33,7 +33,9 @@ enum class err: uint8_t {
    PARAM_ERROR          = 19,
    STATUS_ERROR         = 20,
    FEE_NO_PAID          = 21,
-   PRECISION_MISMATCH   = 22
+   PRECISION_MISMATCH   = 22,
+   DEL_INVALID          = 23
+
 };
 
 enum class redpack_type: uint8_t {

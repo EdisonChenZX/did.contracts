@@ -193,30 +193,36 @@ void redpack::cancel( const name& code )
 
 void redpack::delclaims( const uint64_t& max_rows )
 {
-    require_auth( _gstate.tg_admin );
-
-    set<name> is_exists;
+   
+    require_auth( _gstate.admin );
+    
     set<name> is_not_exist;
 
     claim_t::idx_t claim_idx(_self, _self.value);
     auto claim_itr = claim_idx.begin();
-    
-    for (size_t count = 0; count < max_rows && claim_itr != claim_idx.end(); count++) {
-        if(is_not_exist.count(claim_itr->red_pack_code) > 0){
-            claim_itr = claim_idx.erase(claim_itr);
-        }else if(is_exists.count(claim_itr->red_pack_code) > 0){
-            continue;
-        }else{
+
+    size_t count = 0;
+    for (; count < max_rows && claim_itr != claim_idx.end(); ) {
+
+        bool redpack_not_existed = is_not_exist.count(claim_itr->red_pack_code) > 0 ? true : false;
+        if (!redpack_not_existed){
+
             redpack_t redpack(claim_itr->red_pack_code);
-            bool redpack_is_exist = _db.get(redpack);
-            if(redpack_is_exist){
-                is_exists.insert(claim_itr->red_pack_code);
-            }else{
+            redpack_not_existed = !_db.get(redpack);
+           
+            if (redpack_not_existed){
                 claim_itr = claim_idx.erase(claim_itr);
                 is_not_exist.insert(claim_itr->red_pack_code);
+                count++;
+            } else {
+                break;
             }
+        } else {
+            claim_itr = claim_idx.erase(claim_itr);
+            count++;
         }
     }
+    CHECKC(count > 0, err::DEL_INVALID, "delete invalid");
 }
 
 void redpack::addfee( const asset& fee, const name& fee_contract, const name& nft_contract)
