@@ -162,7 +162,7 @@ void redpack::claimredpack( const name& claimer, const name& code, const string&
     auto id = claims.available_primary_key();
     claims.emplace( _self, [&]( auto& row ) {
         row.id                  = id;
-        row.red_pack_code 	    = code;
+        row.red_pack_code 	    = code;·
         row.sender              = redpack.sender;
         row.receiver            = claimer;
         row.quantity            = redpack_quantity;
@@ -172,7 +172,6 @@ void redpack::claimredpack( const name& claimer, const name& code, const string&
 
 void redpack::cancel( const name& code )
 {
-    require_auth( _self );
     redpack_t redpack(code);
     CHECKC( _db.get(redpack), err::RECORD_NO_FOUND, "redpack not found" );
     CHECKC( current_time_point() > redpack.created_at + eosio::hours(_gstate.expire_hours), err::NOT_EXPIRED, "expiration date is not reached" );
@@ -192,9 +191,7 @@ void redpack::cancel( const name& code )
 }
 
 void redpack::delclaims( const uint64_t& max_rows )
-{
-    require_auth( _self );
-    
+{    
     set<name> is_not_exist;
 
     claim_t::idx_t claim_idx(_self, _self.value);
