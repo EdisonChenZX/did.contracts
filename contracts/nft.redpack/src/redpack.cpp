@@ -162,7 +162,7 @@ void redpack::claimredpack( const name& claimer, const name& code, const string&
     auto id = claims.available_primary_key();
     claims.emplace( _self, [&]( auto& row ) {
         row.id                  = id;
-        row.red_pack_code 	    = code;·
+        row.red_pack_code 	    = code;
         row.sender              = redpack.sender;
         row.receiver            = claimer;
         row.quantity            = redpack_quantity;
@@ -244,7 +244,7 @@ void redpack::delfee( const name& nft_contract )
     _db.del( fee_info );
 }
 
-void redpack::setconf(const name& admin, const uint16_t& hours, const bool& enable_did)
+void redpack::setconf(const name& admin, const uint16_t& hours)
 {
     require_auth( _self );
     CHECKC( is_account(admin), err::ACCOUNT_INVALID, "account invalid" );
@@ -252,7 +252,6 @@ void redpack::setconf(const name& admin, const uint16_t& hours, const bool& enab
 
     _gstate.admin = admin;
     _gstate.expire_hours = hours;
-    _gstate.enable_did = enable_did;
 }
 
 void redpack::delredpacks(const name& code){

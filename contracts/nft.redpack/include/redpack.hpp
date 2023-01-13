@@ -27,7 +27,6 @@ enum class err: uint8_t {
    VAILD_TIME_INVALID   = 13,
    MIN_UNIT_INVALID     = 14,
    RED_PACK_EXIST       = 15,
-   DID_NOT_AUTH         = 16,
    UNDER_MAINTENANCE    = 17,
    TOO_MANY_TYPES       = 18,
    PARAM_ERROR          = 19,
@@ -40,9 +39,7 @@ enum class err: uint8_t {
 
 enum class redpack_type: uint8_t {
    RANDOM       = 0,
-   MEAN         = 1,
-   DID_RANDOM   = 10,
-   DID_MEAN     = 11
+   MEAN         = 1
    
 };
 
@@ -83,7 +80,7 @@ public:
 
     [[eosio::action]] void delfee( const name& nft_contract );
 
-    [[eosio::action]] void setconf( const name& admin, const uint16_t& hours, const bool& enable_did );
+    [[eosio::action]] void setconf( const name& admin, const uint16_t& hours );
 
     [[eosio::action]] void delredpacks( const name& code );
 
