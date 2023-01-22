@@ -214,7 +214,7 @@ void redpack::delclaims( const uint64_t& max_rows )
     auto claim_itr          = claim_idx.begin();
     size_t count            = 0;
     for(; count < max_rows && claim_itr != claim_idx.end(); ) {
-        if( deleted_redpacks.count(claim_itr->red_pack_code) > 0 ) {
+        if( deleted_redpacks.count(claim_itr->red_pack_code) ) {
             claim_itr       = claim_idx.erase(claim_itr);
             count++;
             continue;
