@@ -32,7 +32,7 @@ inline int64_t get_precision(const asset &a) {
     return get_precision(a.symbol);
 }
 
-void redpack::feetransfer( name from, name to, asset quantity, string memo )
+void redpack::on_fee_transfer( name from, name to, asset quantity, string memo )
 {
     if (from == _self || to != _self) return;
 
@@ -103,7 +103,7 @@ void redpack::ontransfer( const name& from, const name& to, const vector<nasset>
     redpack_t redpack(code);
     bool is_exists = _db.get(redpack);
 
-    if(is_exists){
+    if( is_exists ) {
         CHECKC( redpack.sender == from, err::PARAM_ERROR, "redpack sender must be fee sender" );
         CHECKC( redpack.nft_contract == nft_contract, err::PARAM_ERROR, "nft contract error" );
         CHECKC( quantity == redpack.total_quantity, err::PARAM_ERROR, "quantity error" );
@@ -113,7 +113,8 @@ void redpack::ontransfer( const name& from, const name& to, const vector<nasset>
         redpack.status			        = redpack_status::CREATED;
         redpack.updated_at              = time_point_sec( current_time_point() );
         _db.set(redpack, _self);
-    }else{
+
+    } else {
         fee_t fee_info(nft_contract);
         CHECKC( (_db.get(fee_info) && fee_info.fee.amount == 0), err::FEE_NO_PAID, "service charge not paid" );
         
@@ -170,11 +171,13 @@ void redpack::claimredpack( const name& claimer, const name& code, const string&
    });
 }
 
+//cancel/delete a redpack and revert fees & NFTs within
 void redpack::cancel( const name& code )
 {
     redpack_t redpack(code);
     CHECKC( _db.get(redpack), err::RECORD_NO_FOUND, "redpack not found" );
     CHECKC( current_time_point() > redpack.created_at + eosio::hours(_gstate.expire_hours), err::NOT_EXPIRED, "expiration date is not reached" );
+    
     if(redpack.status == redpack_status::CREATED){
         fee_t fee_info(redpack.nft_contract);
         CHECKC( _db.get(fee_info), err::FEE_NOT_FOUND, "fee not found" );
@@ -182,40 +185,51 @@ void redpack::cancel( const name& code )
         vector<nasset> redpack_quants = { redpack.remain_quantity };
         NFT_TRANSFER(redpack.nft_contract, redpack.sender, redpack_quants, string("red pack cancel transfer"));
         
-        if(redpack.fee.amount > 0){
+        //TODO: delete below code
+        if( redpack.fee.amount > 0 ) {
             asset cancelamt = redpack.fee / redpack.total_quantity.amount * redpack.remain_quantity.amount;
             TRANSFER_OUT(fee_info.fee_contract, redpack.sender, cancelamt, string("red pack cancel transfer"));
         }
     }
-    _db.del(redpack);
+    _db.del( redpack );
+}
+
+//for admin use only
+void redpack::delredpacks(const name& code){
+    require_auth( _self );
+
+    redpack_t::idx_t redpacks(_self, _self.value);
+    auto redpack_itr = redpacks.find(code.value);
+    while(redpack_itr != redpacks.end()){
+        redpack_itr = redpacks.erase(redpack_itr);
+    }
 }
 
 void redpack::delclaims( const uint64_t& max_rows )
 {    
-    set<name> is_not_exist;
+    set<name> deleted_redpacks;
+
+    auto redpack            = redpack_t(name(""));
 
     claim_t::idx_t claim_idx(_self, _self.value);
-    auto claim_itr = claim_idx.begin();
-
-    size_t count = 0;
-    for (; count < max_rows && claim_itr != claim_idx.end(); ) {
-        bool redpack_not_existed = is_not_exist.count(claim_itr->red_pack_code) > 0 ? true : false;
-        if (!redpack_not_existed){
-            redpack_t redpack(claim_itr->red_pack_code);
-            redpack_not_existed = !_db.get(redpack);
-           
-            if (redpack_not_existed){
-                claim_itr = claim_idx.erase(claim_itr);
-                is_not_exist.insert(claim_itr->red_pack_code);
-                count++;
-            } else {
-                break;
-            }
-        } else {
-            claim_itr = claim_idx.erase(claim_itr);
+    auto claim_itr          = claim_idx.begin();
+    size_t count            = 0;
+    for(; count < max_rows && claim_itr != claim_idx.end(); ) {
+        if( deleted_redpacks.count(claim_itr->red_pack_code) > 0 ) {
+            claim_itr       = claim_idx.erase(claim_itr);
             count++;
+            continue;
         }
+
+        redpack.code = claim_itr->red_pack_code;
+        if( _db.get(redpack) ) {
+            claim_itr++;
+            continue;
+        }
+
+        deleted_redpacks.insert( claim_itr->red_pack_code );
     }
+
     CHECKC(count > 0, err::DEL_INVALID, "delete invalid");
 }
 
@@ -252,16 +266,6 @@ void redpack::setconf(const name& admin, const uint16_t& hours)
 
     _gstate.admin = admin;
     _gstate.expire_hours = hours;
-}
-
-void redpack::delredpacks(const name& code){
-    require_auth( _self );
-
-    redpack_t::idx_t redpacks(_self, _self.value);
-    auto redpack_itr = redpacks.find(code.value);
-    while(redpack_itr != redpacks.end()){
-        redpack_itr =redpacks.erase(redpack_itr);
-    }
 }
 
 asset redpack::_calc_fee(const asset& fee, const uint64_t count) {
