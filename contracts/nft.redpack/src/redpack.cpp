@@ -223,8 +223,7 @@ void redpack::delclaims( const uint64_t& max_rows )
         redpack.code        = claim_itr->red_pack_code;
         if( _db.get(redpack) ) {
             claim_itr++;
-
-            //TODO: delete redpack that exceeds 24 hours
+            //TODO: delete redpacks that exceed 24 hours
             continue;
         }
 
