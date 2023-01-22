@@ -221,11 +221,14 @@ void redpack::delclaims( const uint64_t& max_rows )
         }
 
         redpack.code        = claim_itr->red_pack_code;
-        if( !_db.get(redpack) )
-           deleted_redpacks.insert( claim_itr->red_pack_code );
+        if( _db.get(redpack) ) {
+            claim_itr++;
 
-        //TODO: delete redpack that exceeds 24 hours
-        claim_itr++;
+            //TODO: delete redpack that exceeds 24 hours
+            continue;
+        }
+
+        deleted_redpacks.insert( claim_itr->red_pack_code );
     }
 
     CHECKC( count > 0, err::NONE_DELETED, "none deleted" )
