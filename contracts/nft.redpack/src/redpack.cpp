@@ -220,7 +220,7 @@ void redpack::delclaims( const uint64_t& max_rows )
             continue;
         }
 
-        redpack.code = claim_itr->red_pack_code;
+        redpack.code        = claim_itr->red_pack_code;
         if( _db.get(redpack) ) {
             claim_itr++;
             continue;
