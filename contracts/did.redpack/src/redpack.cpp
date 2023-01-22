@@ -209,7 +209,7 @@ void redpack::delclaims( const uint64_t& max_rows )
             count++;
         }
     }
-    CHECKC(count > 0, err::DEL_INVALID, "delete invalid");
+    CHECKC(count > 0, err::NONE_DELETED, "delete invalid");
 }
 
 void redpack::addfee( const asset& fee, const name& contract, const uint16_t& min_unit,
