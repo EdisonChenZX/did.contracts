@@ -208,7 +208,7 @@ void redpack::delredpacks(const name& code){
 void redpack::delclaims( const uint64_t& max_rows )
 {    
     set<name> deleted_redpacks;
-    auto redpack            = redpack_t(name(""));
+    auto redpack            = redpack_t();
 
     claim_t::idx_t claim_idx(_self, _self.value);
     auto claim_itr          = claim_idx.begin();
