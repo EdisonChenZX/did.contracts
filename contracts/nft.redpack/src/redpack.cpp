@@ -208,7 +208,6 @@ void redpack::delredpacks(const name& code){
 void redpack::delclaims( const uint64_t& max_rows )
 {    
     set<name> deleted_redpacks;
-
     auto redpack            = redpack_t(name(""));
 
     claim_t::idx_t claim_idx(_self, _self.value);
@@ -230,7 +229,7 @@ void redpack::delclaims( const uint64_t& max_rows )
         deleted_redpacks.insert( claim_itr->red_pack_code );
     }
 
-    CHECKC(count > 0, err::DEL_INVALID, "delete invalid");
+    CHECKC( count > 0, err::DEL_INVALID, "none deleted" )
 }
 
 void redpack::addfee( const asset& fee, const name& fee_contract, const name& nft_contract)
