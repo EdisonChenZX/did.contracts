@@ -187,10 +187,10 @@ void redpack::cancel( const name& code )
 {
     redpack_t redpack(code);
     auto expired_at = redpack.created_at + eosio::hours(_gstate.expire_hours);
-    CHECKC( _db.get(redpack), err::RECORD_NO_FOUND, "redpack not found" );
-    CHECKC( current_time_point() > expired_at, err::NOT_EXPIRED, "expiration date is not reached" );
+    CHECKC( _db.get(redpack), err::RECORD_NO_FOUND, "redpack not found" )
+    CHECKC( current_time_point() > expired_at, err::NOT_EXPIRED, "redpack not expired yet" )
     
-    if(redpack.status == redpack_status::CREATED){
+    if( redpack.status == redpack_status::CREATED ) {
         fee_t fee_info(redpack.nft_contract);
         CHECKC( _db.get(fee_info), err::FEE_NOT_FOUND, "fee not found" );
 
@@ -235,7 +235,8 @@ void redpack::delclaims( const uint64_t& max_rows )
         redpack.code        = claim_itr->red_pack_code;
         if( _db.get(redpack) ) {
             claim_itr++;
-            //TODO: delete redpacks that exceed 24 hours
+            //delete redpacks that exceed 24 hours
+            cancel( redpack.code );
             continue;
         }
 
