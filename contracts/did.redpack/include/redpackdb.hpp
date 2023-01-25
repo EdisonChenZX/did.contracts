@@ -68,19 +68,19 @@ struct TG_TBL redpack_t {
 
     uint64_t primary_key() const { return code.value; }
 
-    uint64_t by_updatedid() const { return ((uint64_t)updated_at.sec_since_epoch() << 32) | (code.value & 0x00000000FFFFFFFF); }
-    uint64_t by_sender() const { return sender.value; }
+    // uint64_t by_updatedid() const { return ((uint64_t)updated_at.sec_since_epoch() << 32) | (code.value & 0x00000000FFFFFFFF); }
+    // uint64_t by_sender() const { return sender.value; }
 
     redpack_t(){}
     redpack_t( const name& c ): code(c){}
 
     typedef eosio::multi_index<"redpacks"_n, redpack_t,
-        indexed_by<"updatedid"_n,  const_mem_fun<redpack_t, uint64_t, &redpack_t::by_updatedid> >,
-        indexed_by<"senderid"_n,  const_mem_fun<redpack_t, uint64_t, &redpack_t::by_sender> >
+        // indexed_by<"updatedid"_n,  const_mem_fun<redpack_t, uint64_t, &redpack_t::by_updatedid> >,
+        // indexed_by<"senderid"_n,  const_mem_fun<redpack_t, uint64_t, &redpack_t::by_sender> >
     > idx_t;
 
     EOSLIB_SERIALIZE( redpack_t, (code)(sender)(pw_hash)(total_quantity)(receiver_count)(remain_quantity)
-                              (remain_count)(fee)(status)(type)(created_at)(updated_at) )
+                                 (remain_count)(fee)(status)(type)(created_at)(updated_at) )
 };
 
 struct TG_TBL claim_t {
@@ -92,17 +92,17 @@ struct TG_TBL claim_t {
     time_point      claimed_at;                 //update time: last updated at
     uint64_t primary_key() const { return id; }
     uint128_t by_unionid() const { return get_unionid(receiver, red_pack_code.value); }
-    uint64_t by_claimedid() const { return ((uint64_t)claimed_at.sec_since_epoch() << 32) | (id & 0x00000000FFFFFFFF); }
-    uint64_t by_sender() const { return sender.value; }
-    uint64_t by_receiver() const { return receiver.value; }
-    uint64_t by_packid() const { return red_pack_code.value; }
+    // uint64_t by_claimedid() const { return ((uint64_t)claimed_at.sec_since_epoch() << 32) | (id & 0x00000000FFFFFFFF); }
+    // uint64_t by_sender() const { return sender.value; }
+    // uint64_t by_receiver() const { return receiver.value; }
+    // uint64_t by_packid() const { return red_pack_code.value; }
 
     typedef eosio::multi_index<"claims"_n, claim_t,
-        indexed_by<"unionid"_n,  const_mem_fun<claim_t, uint128_t, &claim_t::by_unionid> >,
-        indexed_by<"claimedid"_n,  const_mem_fun<claim_t, uint64_t, &claim_t::by_claimedid> >,
-        indexed_by<"packid"_n,  const_mem_fun<claim_t, uint64_t, &claim_t::by_packid> >,
-        indexed_by<"senderid"_n,  const_mem_fun<claim_t, uint64_t, &claim_t::by_sender> >,
-        indexed_by<"receiverid"_n,  const_mem_fun<claim_t, uint64_t, &claim_t::by_receiver> >
+        indexed_by<"unionid"_n,  const_mem_fun<claim_t, uint128_t, &claim_t::by_unionid> >
+        // indexed_by<"claimedid"_n,  const_mem_fun<claim_t, uint64_t, &claim_t::by_claimedid> >,
+        // indexed_by<"packid"_n,  const_mem_fun<claim_t, uint64_t, &claim_t::by_packid> >,
+        // indexed_by<"senderid"_n,  const_mem_fun<claim_t, uint64_t, &claim_t::by_sender> >,
+        // indexed_by<"receiverid"_n,  const_mem_fun<claim_t, uint64_t, &claim_t::by_receiver> >
     > idx_t;
 
     EOSLIB_SERIALIZE( claim_t, (id)(red_pack_code)(sender)(receiver)(quantity)(claimed_at) )

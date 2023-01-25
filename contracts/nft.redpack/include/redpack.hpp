@@ -33,7 +33,7 @@ enum class err: uint8_t {
    STATUS_ERROR         = 20,
    FEE_NO_PAID          = 21,
    PRECISION_MISMATCH   = 22,
-   NONE_DELETED          = 23
+   NONE_DELETED         = 23
 
 };
 

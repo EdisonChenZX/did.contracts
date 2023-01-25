@@ -173,13 +173,6 @@ void redpack::cancel( const name& code )
         TRANSFER_OUT(fee_info.contract_name, redpack.sender, cancelamt, string("red pack cancel transfer"));
     }
     _db.del(redpack);
-    // claim_t::idx_t claims(_self, _self.value);
-    // auto claims_index = claims.get_index<"packid"_n>();
-    // auto claims_iter = claims_index.find(code.value);
-    // while(claims_iter != claims_index.end()){
-    //     claims_index.erase(claims_iter);
-    //     claims_iter = claims_index.find(code.value);
-    // }
 }
 
 
