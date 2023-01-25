@@ -87,5 +87,6 @@ public:
     asset _calc_fee(const asset& fee, const uint64_t count);
 
 private:
+    void _del_redpack(const redpack_t& redpack);
 
 }; //contract redpack

@@ -185,11 +185,15 @@ void redpack::claimredpack( const name& claimer, const name& code, const string&
 //cancel/delete a redpack and revert fees & NFTs within
 void redpack::cancel( const name& code )
 {
-    redpack_t redpack(code);
+    auto redpack    = redpack_t(code);
     auto expired_at = redpack.created_at + eosio::hours(_gstate.expire_hours);
     CHECKC( _db.get(redpack), err::RECORD_NO_FOUND, "redpack not found" )
     CHECKC( current_time_point() > expired_at, err::NOT_EXPIRED, "redpack not expired yet" )
     
+    _del_redpack( redpack );
+}
+
+void redpack::_del_redpack(const redpack_t& redpack) {
     if( redpack.status == redpack_status::CREATED ) {
         fee_t fee_info(redpack.nft_contract);
         CHECKC( _db.get(fee_info), err::FEE_NOT_FOUND, "fee not found" );
@@ -225,8 +229,10 @@ void redpack::delclaims( const uint64_t& max_rows )
     claim_t::idx_t claim_idx(_self, _self.value);
     auto claim_itr          = claim_idx.begin();
     size_t count            = 0;
+    auto now                = current_time_point();
     for(; count < max_rows && claim_itr != claim_idx.end(); ) {
-        if( deleted_redpacks.count(claim_itr->red_pack_code) ) {
+        if( deleted_redpacks.find(claim_itr->red_pack_code) != deleted_redpacks.end() ) {
+            // check( false, "code: " + claim_itr->red_pack_code.to_string() + ", count: " + to_string( deleted_redpacks.size() ) );
             claim_itr       = claim_idx.erase(claim_itr);
             count++;
             continue;
@@ -234,14 +240,17 @@ void redpack::delclaims( const uint64_t& max_rows )
 
         redpack.code        = claim_itr->red_pack_code;
         if( _db.get(redpack) ) {
-            claim_itr++;
-            //delete redpacks that exceed 24 hours
-            cancel( redpack.code );
-            continue;
-        }
+            auto expired_at = redpack.created_at + eosio::hours(_gstate.expire_hours);
+            if( now > expired_at )
+                _del_redpack( redpack ); //delete redpacks that exceed 12 hours
 
-        deleted_redpacks.insert( claim_itr->red_pack_code );
+        } else {
+            deleted_redpacks.insert( claim_itr->red_pack_code );
+            claim_itr++;
+        }
     }
+
+    // check(false, "count: " + to_string(count) );
 
     CHECKC( count > 0, err::NONE_DELETED, "none deleted" )
 }
