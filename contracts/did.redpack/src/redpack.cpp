@@ -65,7 +65,7 @@ void redpack::_token_transfer( const name& from, const name& to, const asset& qu
     if((redpack_type)type == redpack_type::DID_RANDOM || 
         (redpack_type)type == redpack_type::DID_MEAN){
 
-        CHECKC(  _gstate.did_supported, err::UNDER_MAINTENANCE, "did redpack is under maintenance" );    
+        CHECKC(  _gstate.did_required, err::UNDER_MAINTENANCE, "did redpack is under maintenance" );    
     }
 
     auto fee_info = fee_conf_t(quantity.symbol);

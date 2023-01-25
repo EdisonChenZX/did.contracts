@@ -65,6 +65,8 @@ public:
     }
 
 
+    [[eosio::action]] void init( const name& admin, const uint16_t& hours );
+
     //[[eosio::action]]
     [[eosio::on_notify("amax.token::transfer")]] void on_fee_transfer(name from, name to, asset quantity, string memo);
     
@@ -79,8 +81,6 @@ public:
     [[eosio::action]] void addfee( const asset& fee, const name& fee_contract, const name& nft_contract);
 
     [[eosio::action]] void delfee( const name& nft_contract );
-
-    [[eosio::action]] void setconf( const name& admin, const uint16_t& hours );
 
     [[eosio::action]] void delredpacks( const name& code );
 

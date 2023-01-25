@@ -32,6 +32,17 @@ inline int64_t get_precision(const asset &a) {
     return get_precision(a.symbol);
 }
 
+
+void redpack::init(const name& admin, const uint16_t& hours)
+{
+    require_auth( _self );
+    CHECKC( is_account(admin), err::ACCOUNT_INVALID, "account invalid" );
+    CHECKC( hours > 0, err::VAILD_TIME_INVALID, "valid time must be positive" );
+
+    _gstate.admin = admin;
+    _gstate.expire_hours = hours;
+}
+
 void redpack::on_fee_transfer( name from, name to, asset quantity, string memo )
 {
     if (from == _self || to != _self) return;
@@ -175,8 +186,9 @@ void redpack::claimredpack( const name& claimer, const name& code, const string&
 void redpack::cancel( const name& code )
 {
     redpack_t redpack(code);
+    auto expired_at = redpack.created_at + eosio::hours(_gstate.expire_hours);
     CHECKC( _db.get(redpack), err::RECORD_NO_FOUND, "redpack not found" );
-    CHECKC( current_time_point() > redpack.created_at + eosio::hours(_gstate.expire_hours), err::NOT_EXPIRED, "expiration date is not reached" );
+    CHECKC( current_time_point() > expired_at, err::NOT_EXPIRED, "expiration date is not reached" );
     
     if(redpack.status == redpack_status::CREATED){
         fee_t fee_info(redpack.nft_contract);
@@ -256,16 +268,6 @@ void redpack::delfee( const name& nft_contract )
     CHECKC( _db.get(fee_info), err::FEE_NOT_FOUND, "fee not found" );
 
     _db.del( fee_info );
-}
-
-void redpack::setconf(const name& admin, const uint16_t& hours)
-{
-    require_auth( _self );
-    CHECKC( is_account(admin), err::ACCOUNT_INVALID, "account invalid" );
-    CHECKC( hours > 0, err::VAILD_TIME_INVALID, "valid time must be positive" );
-
-    _gstate.admin = admin;
-    _gstate.expire_hours = hours;
 }
 
 asset redpack::_calc_fee(const asset& fee, const uint64_t count) {

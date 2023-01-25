@@ -26,6 +26,7 @@ static constexpr uint64_t DAY_SECONDS           = DAY_SECONDS_FOR_TEST;
 #endif//DAY_SECONDS_FOR_TEST
 
 static constexpr uint32_t MAX_TITLE_SIZE        = 64;
+static constexpr uint8_t    EXPIRY_HOURS        = 12;
 
 namespace wasm { namespace db {
 
@@ -34,11 +35,11 @@ namespace wasm { namespace db {
 
 struct TG_TBL_NAME("global") global_t {
     name            admin;
-    uint16_t        expire_hours;
+    uint16_t        expire_hours;   //discarded
     uint16_t        data_failure_hours;
-    bool            did_supported;
+    bool            did_required;
 
-    EOSLIB_SERIALIZE( global_t, (admin)(expire_hours)(data_failure_hours)(did_supported) )
+    EOSLIB_SERIALIZE( global_t, (admin)(expire_hours)(data_failure_hours)(did_required) )
 };
 typedef eosio::singleton< "global"_n, global_t > global_singleton;
 
@@ -74,7 +75,7 @@ struct TG_TBL redpack_t {
     redpack_t(){}
     redpack_t( const name& c ): code(c){}
 
-    typedef eosio::multi_index<"redpacks"_n, redpack_t,
+    typedef eosio::multi_index<"redpacks"_n, redpack_t
         // indexed_by<"updatedid"_n,  const_mem_fun<redpack_t, uint64_t, &redpack_t::by_updatedid> >,
         // indexed_by<"senderid"_n,  const_mem_fun<redpack_t, uint64_t, &redpack_t::by_sender> >
     > idx_t;

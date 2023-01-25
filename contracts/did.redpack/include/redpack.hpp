@@ -74,14 +74,14 @@ public:
     ACTION delfee( const symbol& coin );
     ACTION delredpacks( const name& code );
 
-    ACTION init(const name& admin, const uint16_t& hours, const bool& did_supported) {
+    ACTION init(const name& admin, const uint16_t& hours, const bool& did_required) {
         require_auth( _self );
         CHECKC( is_account(admin), err::ACCOUNT_INVALID, "account invalid" );
         CHECKC( hours > 0, err::VAILD_TIME_INVALID, "valid time must be positive" );
 
         _gstate.admin = admin;
         _gstate.expire_hours = hours;
-        _gstate.did_supported = did_supported;
+        _gstate.did_required = did_required;
     }
 
 private:
