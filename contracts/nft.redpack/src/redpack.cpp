@@ -243,10 +243,11 @@ void redpack::delclaims( const uint64_t& max_rows )
             auto expired_at = redpack.created_at + eosio::hours(_gstate.expire_hours);
             if( now > expired_at )
                 _del_redpack( redpack ); //delete redpacks that exceed 12 hours
+            else
+                claim_itr++;
 
         } else {
             deleted_redpacks.insert( claim_itr->red_pack_code );
-            claim_itr++;
         }
     }
 
