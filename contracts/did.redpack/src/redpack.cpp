@@ -149,6 +149,13 @@ void redpack::claimredpack( const name& claimer, const name& code, const string&
     CHECKC( _db.get(redpack), err::RECORD_NO_FOUND, "redpack not found" );
     auto pw_hash = split(redpack.pw_hash, ":");
     auto contract_name = name(pw_hash[1]);
+    if (contract_name.length() == 0) {
+        tokenlist_t::idx_t tokenlist_tbl(_self, _self.value);
+        auto tokenlist_index = tokenlist_tbl.get_index<"sym"_n>();
+        auto tokenlist_iter = tokenlist_index.find(redpack.total_quantity.symbol.raw());
+        CHECKC( tokenlist_iter != tokenlist_index.end(), err::RECORD_NO_FOUND, "token list not found" );
+        contract_name = tokenlist_iter->contract;
+    } 
     CHECKC( pw_hash[0] == pwhash, err::PWHASH_INVALID, "incorrect password");
     CHECKC( redpack.status == redpack_status::CREATED, err::EXPIRED, "redpack has expired" );
 
