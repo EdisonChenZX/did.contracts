@@ -14,7 +14,7 @@ enum class err: uint8_t {
    QUANTITY_NOT_ENOUGH  = 3,
    NOT_POSITIVE         = 4,
    SYMBOL_MISMATCH      = 5,
-   EXPIRED              = 6, 
+   EXPIRED              = 6,
    PWHASH_INVALID       = 7,
    RECORD_NO_FOUND      = 8,
    NOT_REPEAT_RECEIVE   = 9,
@@ -26,7 +26,9 @@ enum class err: uint8_t {
    RED_PACK_EXIST       = 15,
    DID_NOT_AUTH         = 16,
    UNDER_MAINTENANCE    = 17,
-   NONE_DELETED          = 18
+   NONE_DELETED         = 19,
+   IN_THE_WHITELIST     = 20,
+   NON_RENEWAL          = 21
 };
 
 enum class redpack_type: uint8_t {
@@ -34,7 +36,7 @@ enum class redpack_type: uint8_t {
    MEAN         = 1,
    DID_RANDOM   = 10,
    DID_MEAN     = 11
-   
+
 };
 
 class [[eosio::contract("did.redpack")]] redpack: public eosio::contract {
@@ -42,6 +44,8 @@ private:
     dbc                 _db;
     global_singleton    _global;
     global_t            _gstate;
+    global_singleton2   _global2;
+    global_t2           _gstate2;
 
 public:
     using contract::contract;
@@ -49,32 +53,37 @@ public:
     redpack(eosio::name receiver, eosio::name code, datastream<const char*> ds):
         _db(_self),
         contract(receiver, code, ds),
-        _global(_self, _self.value)
+        _global(_self, _self.value),
+        _global2(_self, _self.value)
     {
         _gstate = _global.exists() ? _global.get() : global_t{};
+        _gstate2 = _global2.exists() ? _global2.get() : global_t2{};
     }
 
     ~redpack() {
-        _global.set( _gstate, get_self() );
+        _global.set(_gstate, get_self());
+        _global2.set(_gstate2, get_self());
     }
 
-    [[eosio::on_notify("amax.token::transfer")]] 
+    ACTION setfee(const extended_asset& fee);
+
+    ACTION setwhitelist(const extended_symbol& token);
+
+    [[eosio::on_notify("amax.token::transfer")]]
     void on_token_transfer(const name& from, const name& to, const asset& quantity, const string& memo);
 
-    [[eosio::on_notify("amax.mtoken::transfer")]] 
+    [[eosio::on_notify("amax.mtoken::transfer")]]
     void on_mtoken_transfer(const name& from, const name& to, const asset& quantity, const string& memo );
 
-    // [[eosio::on_notify("amax.ntoken::transfer")]] 
+    // [[eosio::on_notify("amax.ntoken::transfer")]]
     // void on_ntoken_transfer(const name& from, const name& to, const vector<nasset>& assets, const string& memo );
 
     ACTION claimredpack( const name& claimer, const name& code, const string& pwhash );
     ACTION cancel( const name& code );
     ACTION delclaims( const uint64_t& max_rows );
-    ACTION addfee( const asset& fee, const name& contract, const uint16_t& min_unit, const name& did_contract, const uint64_t& did_id);
-    ACTION delfee( const symbol& coin );
     ACTION delredpacks( const name& code );
 
-    ACTION init(const name& admin, const uint16_t& hours, const bool& did_required) {
+    ACTION init(const name& admin, const uint16_t& hours, const bool& did_required, const uint64_t& did_id, const name& did_contract) {
         require_auth( _self );
         CHECKC( is_account(admin), err::ACCOUNT_INVALID, "account invalid" );
         CHECKC( hours > 0, err::VAILD_TIME_INVALID, "valid time must be positive" );
@@ -82,13 +91,15 @@ public:
         _gstate.admin = admin;
         _gstate.expire_hours = hours;
         _gstate.did_required = did_required;
+        _gstate2.did_id = did_id;
+        _gstate2.did_contract = did_contract;
     }
 
 private:
     void _token_transfer( const name& from, const name& to, const asset& quantity, const string& memo );
-    
-    asset _calc_fee(const asset& fee, const uint64_t count);
-    asset _calc_red_amt(const redpack_t& redpack,const uint16_t& min_unit);
+
+    // asset _calc_fee(const asset& fee, const uint64_t count);
+    asset _calc_red_amt(const redpack_t& redpack);
     uint64_t rand(asset max_quantity,  uint16_t min_unit);
 
 }; //contract redpack

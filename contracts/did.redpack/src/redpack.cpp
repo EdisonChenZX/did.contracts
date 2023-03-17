@@ -27,6 +27,21 @@ inline int64_t get_precision(const asset &a) {
     return get_precision(a.symbol);
 }
 
+void redpack::setfee(const extended_asset& fee) {
+    require_auth( _self );
+    CHECKC( fee.quantity.amount>0, err::FEE_NOT_POSITIVE, "fee not positive" );
+    
+    _gstate2.fee = fee;
+}
+
+void redpack::setwhitelist(const extended_symbol& token) {
+    require_auth( _self );
+    int64_t value = amax::token::get_supply(token.get_contract(), token.get_symbol().code()).amount;
+    CHECKC( value > 0, err::SYMBOL_MISMATCH, "symbol mismatch" );
+    
+    _gstate2.whitelist.insert(token);
+}
+
 //issue-in op: transfer tokens to the contract and lock them according to the given plan
 void redpack::on_token_transfer( const name& from, const name& to, const asset& quantity, const string& memo)
 {
@@ -46,77 +61,106 @@ void redpack::_token_transfer( const name& from, const name& to, const asset& qu
 
     //memo params format:
     //${pwhash} : count : type : code
-    auto parts = split( memo, ":" );
-    CHECKC( parts.size() == 4, err::INVALID_FORMAT,"Expected format 'pwhash : count : type : code'" );
+    //asset:contract
+    auto parts = split(memo, ":");
+    if (parts.size() == 4) {
+        
+        name receiver_contract = get_first_receiver();
+        extended_symbol extended_quantity_symbol = extended_symbol(quantity.symbol, receiver_contract); 
+        if (!_gstate2.whitelist.count(extended_quantity_symbol)) {
+            tokenlist_t::idx_t tokenlist_tbl(_self, _self.value);
+            auto tokenlist_index = tokenlist_tbl.get_index<"symcontract"_n>();
+            uint128_t sec_index = get_unionid(receiver_contract, quantity.symbol.raw());
+            auto tokenlist_iter = tokenlist_index.find(sec_index);
+            CHECKC( tokenlist_iter != tokenlist_index.end(), err::NON_RENEWAL, "non-renewal" );
+            CHECKC( tokenlist_iter->expired_time > time_point_sec(current_time_point()), err::NON_RENEWAL, "non-renewal" );
+       }
 
-    auto code = name(parts[3]);
-    redpack_t redpack(code);
-    CHECKC( !_db.get(redpack), err::RED_PACK_EXIST, "code is already exists" );
+        auto code = name(parts[3]);
+        redpack_t redpack(code);
+        CHECKC(!_db.get(redpack), err::RED_PACK_EXIST, "code is already exists");
+        
+        auto count = stoi(string(parts[1]));
+        auto type = stoi(string(parts[2]));
+        CHECKC((redpack_type)type == redpack_type::RANDOM ||
+                   (redpack_type)type == redpack_type::MEAN ||
+                   (redpack_type)type == redpack_type::DID_RANDOM ||
+                   (redpack_type)type == redpack_type::DID_MEAN,
+               err::TYPE_INVALID, "redpack type invalid");
 
-    auto count = stoi(string(parts[1]));
+        if ((redpack_type)type == redpack_type::DID_RANDOM || (redpack_type)type == redpack_type::DID_MEAN)
+            CHECKC(_gstate.did_required, err::UNDER_MAINTENANCE, "did redpack is under maintenance");
 
-    auto type = stoi(string(parts[2]));
-    CHECKC( (redpack_type)type == redpack_type::RANDOM || 
-            (redpack_type)type == redpack_type::MEAN || 
-            (redpack_type)type == redpack_type::DID_RANDOM || 
-            (redpack_type)type == redpack_type::DID_MEAN, 
-            err::TYPE_INVALID, "redpack type invalid" );
+        CHECKC((quantity / count).amount >= MIN_SINGLE_REDPACK, err::QUANTITY_NOT_ENOUGH, "not enough ");
 
-    if((redpack_type)type == redpack_type::DID_RANDOM || 
-        (redpack_type)type == redpack_type::DID_MEAN){
+        redpack_t::idx_t redpacks(_self, _self.value);
+        redpacks.emplace(_self, [&](auto &row){
+            row.code 					    = code;
+            row.sender 			            = from;
+            row.pw_hash                     = string( parts[0] ) + ":" + get_first_receiver().to_string();
+            row.total_quantity              = quantity;
+            row.receiver_count		        = count;
+            row.remain_quantity		        = quantity;
+            row.remain_count	            = count;
+            row.status			            = redpack_status::CREATED;
+            row.type			            = type;
+            row.created_at                  = time_point_sec( current_time_point() );
+            row.updated_at                  = time_point_sec( current_time_point() ); 
+        });
+    } else if (parts.size() == 2) {
+        name receiver_contract = get_first_receiver();
+        extended_asset extended_quantity = extended_asset(quantity, receiver_contract); 
+        CHECKC(extended_quantity >= _gstate2.fee, err::QUANTITY_NOT_ENOUGH, "quantity not enough ");
 
-        CHECKC(  _gstate.did_required, err::UNDER_MAINTENANCE, "did redpack is under maintenance" );    
+        symbol redpcak_symbol= symbol_from_string(parts[0]);
+        name contract = name(parts[1]);
+        int64_t value = amax::token::get_supply(contract, redpcak_symbol.code()).amount;
+        CHECKC( value > 0, err::SYMBOL_MISMATCH, "symbol mismatch" );
+        
+        extended_symbol token_symbol = extended_symbol(redpcak_symbol, contract);
+        CHECKC( !_gstate2.whitelist.count(token_symbol), err::IN_THE_WHITELIST, "in the whitelist" );
+
+        tokenlist_t::idx_t tokenlist_tbl(_self, _self.value);
+        auto tokenlist_index = tokenlist_tbl.get_index<"symcontract"_n>();
+        uint128_t sec_index = get_unionid(contract, redpcak_symbol.raw());
+        auto tokenlist_iter = tokenlist_index.find(sec_index);
+        bool is_exists = tokenlist_iter != tokenlist_index.end();
+        auto tid = is_exists ? tokenlist_iter->id : tokenlist_tbl.available_primary_key();
+        tokenlist_t token(tid);
+        if (is_exists){
+            CHECKC( tokenlist_iter->expired_time < time_point_sec(current_time_point()), err::NOT_EXPIRED, "not expired" );
+            token.expired_time  = time_point_sec(current_time_point()) + seconds_per_month;
+        }else{
+            token.expired_time  = time_point_sec(current_time_point()) + seconds_per_month;
+            token.sym           = redpcak_symbol;
+            token.contract      = contract;
+        }
+        _db.set(token, _self);
+    } else {
+        CHECKC( false, err::INVALID_FORMAT, "invalid format" );
     }
-
-    auto fee_info = fee_conf_t(quantity.symbol);
-    CHECKC( _db.get(fee_info), err::FEE_NOT_FOUND, "fee not found" );
-
-    asset fee = _calc_fee( fee_info.fee, count );
-    CHECKC( fee < quantity, err::QUANTITY_NOT_ENOUGH , "not enough " );
-
-    asset total_quantity = quantity - fee;
-    CHECKC( (total_quantity/count).amount >= power10(quantity.symbol.precision()-fee_info.min_unit), err::QUANTITY_NOT_ENOUGH , "not enough " );
-
-    redpack_t::idx_t redpacks( _self, _self.value );
-    // auto id = redpacks.available_primary_key();
-    redpacks.emplace( _self, [&]( auto& row ) {
-        row.code 					    = code;
-        row.sender 			            = from;
-        row.pw_hash                     = string( parts[0] );
-        row.total_quantity              = total_quantity;
-        row.fee                         = fee;
-        row.receiver_count		        = count;
-        row.remain_quantity		        = total_quantity;
-        row.remain_count	            = count;
-        row.status			            = redpack_status::CREATED;
-        row.type			            = type;
-        row.created_at                  = time_point_sec( current_time_point() );
-        row.updated_at                  = time_point_sec( current_time_point() );
-   });
-
 }
 
 void redpack::claimredpack( const name& claimer, const name& code, const string& pwhash )
 {
-    require_auth( _gstate.admin );
+    require_auth(_gstate.admin);
 
     redpack_t redpack(code);
     CHECKC( _db.get(redpack), err::RECORD_NO_FOUND, "redpack not found" );
-    CHECKC( redpack.pw_hash == pwhash, err::PWHASH_INVALID, "incorrect password" );
+    auto pw_hash = split(redpack.pw_hash, ":");
+    auto contract_name = name(pw_hash[1]);
+    CHECKC( pw_hash[0] == pwhash, err::PWHASH_INVALID, "incorrect password");
     CHECKC( redpack.status == redpack_status::CREATED, err::EXPIRED, "redpack has expired" );
-    
-    fee_conf_t fee_info(redpack.total_quantity.symbol);
-    CHECKC( _db.get(fee_info), err::FEE_NOT_FOUND, "fee not found" );
 
     bool is_auth = false;
     if((redpack_type)redpack.type == redpack_type::DID_RANDOM || (redpack_type)redpack.type == redpack_type::DID_MEAN){
-        auto claimer_acnts = amax::account_t::idx_t( fee_info.did_contract, claimer.value );
+        auto claimer_acnts = amax::account_t::idx_t( _gstate2.did_contract, claimer.value );
         bool is_auth = false;
         for( auto claimer_acnts_iter = claimer_acnts.begin(); claimer_acnts_iter!=claimer_acnts.end(); claimer_acnts_iter++ ){
             if(claimer_acnts_iter->balance.amount > 0){
                 is_auth = true;
                 break;
-            } 
+            }
         }
         CHECKC( is_auth, err::DID_NOT_AUTH, "did is not authenticated" );
     }
@@ -131,7 +175,7 @@ void redpack::claimredpack( const name& claimer, const name& code, const string&
     switch((redpack_type)redpack.type){
         case redpack_type::RANDOM:
         case redpack_type::DID_RANDOM:
-            redpack_quantity = _calc_red_amt(redpack,fee_info.min_unit);
+            redpack_quantity = _calc_red_amt(redpack);
             break;
 
         case redpack_type::MEAN:
@@ -139,7 +183,7 @@ void redpack::claimredpack( const name& claimer, const name& code, const string&
             redpack_quantity = redpack.remain_count == 1 ? redpack.remain_quantity : redpack.total_quantity/redpack.receiver_count;
             break;
     }
-    TRANSFER_OUT(fee_info.contract_name, claimer, redpack_quantity, string("red pack transfer"));
+    TRANSFER_OUT(contract_name, claimer, redpack_quantity, string("red pack transfer"));
 
     redpack.remain_count--;
     redpack.remain_quantity-=redpack_quantity;
@@ -167,17 +211,24 @@ void redpack::cancel( const name& code )
     CHECKC( _db.get(redpack), err::RECORD_NO_FOUND, "redpack not found" );
     CHECKC( current_time_point() > redpack.created_at + eosio::hours(_gstate.expire_hours), err::NOT_EXPIRED, "expiration date is not reached" );
     if(redpack.status == redpack_status::CREATED){
-        fee_conf_t fee_info(redpack.total_quantity.symbol);
-        CHECKC( _db.get(fee_info), err::FEE_NOT_FOUND, "fee not found" );
-        asset cancelamt = redpack.remain_quantity + fee_info.fee * redpack.remain_count;
-        TRANSFER_OUT(fee_info.contract_name, redpack.sender, cancelamt, string("red pack cancel transfer"));
+        auto pw_hash = split(redpack.pw_hash, ":");
+        auto contract = pw_hash[1];
+        if (contract.size() == 0) {
+            tokenlist_t::idx_t tokenlist_tbl(_self, _self.value);
+            auto tokenlist_index = tokenlist_tbl.get_index<"sym"_n>();
+            auto tokenlist_iter = tokenlist_index.find(redpack.total_quantity.symbol.raw());
+            CHECKC( tokenlist_iter != tokenlist_index.end(), err::RECORD_NO_FOUND, "token list not found" );
+            TRANSFER_OUT(tokenlist_iter->contract, redpack.sender, redpack.remain_quantity, string("red pack cancel transfer"));
+        } else {
+            auto contract_name = name(pw_hash[1]);
+            TRANSFER_OUT(contract_name, redpack.sender, redpack.remain_quantity, string("red pack cancel transfer"));
+        }
     }
     _db.del(redpack);
 }
 
-
 void redpack::delclaims( const uint64_t& max_rows )
-{    
+{
     set<name> is_not_exist;
 
     claim_t::idx_t claim_idx(_self, _self.value);
@@ -205,31 +256,6 @@ void redpack::delclaims( const uint64_t& max_rows )
     CHECKC(count > 0, err::NONE_DELETED, "delete invalid");
 }
 
-void redpack::addfee( const asset& fee, const name& contract, const uint16_t& min_unit,
-                            const name& did_contract, const uint64_t& did_id)
-{
-    require_auth( _self );
-    CHECKC( fee.amount >= 0, err::FEE_NOT_POSITIVE, "fee must be positive" );
-    CHECKC( get_precision(fee) >= power10(min_unit), err::MIN_UNIT_INVALID, "min unit not greater than coin precision" );
-
-    auto fee_info = fee_conf_t(fee.symbol);
-    fee_info.fee = fee;
-    fee_info.contract_name = contract;
-    fee_info.min_unit = min_unit;
-    fee_info.did_contract = did_contract;
-    fee_info.did_id = did_id;
-    _db.set( fee_info, _self );
-}
-
-void redpack::delfee( const symbol& coin )
-{
-    require_auth( _self );
-    auto fee_info = fee_conf_t(coin);
-    CHECKC( _db.get(fee_info), err::FEE_NOT_FOUND, "coin not found" );
-
-    _db.del( fee_info );
-}
-
 void redpack::delredpacks(const name& code){
     require_auth( _self );
 
@@ -240,22 +266,26 @@ void redpack::delredpacks(const name& code){
     }
 }
 
-asset redpack::_calc_fee(const asset& fee, const uint64_t count) {
-    // calc order quantity value by price
-    auto value = multiply<uint64_t>(fee.amount, count);
+// asset redpack::_calc_fee(const asset& fee, const uint64_t count) {
+//     // calc order quantity value by price
+//     auto value = multiply<uint64_t>(fee.amount, count);
 
-    return asset(value, fee.symbol);
-}
+//     return asset(value, fee.symbol);
+// }
 
-asset redpack::_calc_red_amt(const redpack_t& redpack,const uint16_t& min_unit) {
+asset redpack::_calc_red_amt(const redpack_t& redpack) {
     // calc order quantity value by price
-    if( redpack.remain_count == 1 ){
+    if ( redpack.remain_count == 1 ) {
         return redpack.remain_quantity;
-
-    }else{
+    } else {
         uint64_t quantity = redpack.remain_quantity.amount / redpack.remain_count * 2;
-        return asset(rand(asset(quantity,redpack.remain_quantity.symbol),min_unit), redpack.remain_quantity.symbol);
+        uint8_t precision = 0;
+        if (redpack.remain_quantity.symbol.precision() <= 2)
+            precision = 0;
+        else
+            precision = redpack.remain_quantity.symbol.precision() - 2;
 
+        return asset(rand(asset(quantity, redpack.remain_quantity.symbol), precision), redpack.remain_quantity.symbol);
     }
 }
 
@@ -271,9 +301,8 @@ uint64_t redpack::rand(asset max_quantity,  uint16_t min_unit) {
 
     uint64_t rand_value = (uint64_t)(max_quantity.amount * rand) / round_throot * round_throot;
     uint64_t min_value = get_precision(max_quantity) / min_unit_throot;
-
     return rand_value < min_value ? min_value : rand_value;
+    
+
 }
-
-
 
