@@ -119,6 +119,11 @@ class [[eosio::contract("amax.did")]] amax_did : public contract {
 
     using auditlog_action = eosio::action_wrapper<"auditlog"_n, &amax_did::auditlog>;
 
+   ACTION setcollector(const name&  fee_collector ) {
+      require_auth( _self );
+      _gstate.fee_collector = fee_collector;
+   }
+
    private:
       global_singleton    _global;
       global_t            _gstate;
