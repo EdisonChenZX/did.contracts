@@ -67,7 +67,7 @@ public:
 
     ACTION setfee(const extended_asset& fee);
 
-    ACTION setwhitelist(const extended_symbol& token);
+    ACTION setwhitelist(const name& contract, const symbol& sym, const time_point_sec& expired_time);
 
     [[eosio::on_notify("amax.token::transfer")]]
     void on_token_transfer(const name& from, const name& to, const asset& quantity, const string& memo);

@@ -50,9 +50,8 @@ struct TG_TBL_NAME("global2") global_t2
     name                                     did_contract;
     uint64_t                                 did_id;
     extended_asset                           fee;
-    set<extended_symbol>                     whitelist;
     
-    EOSLIB_SERIALIZE(global_t2, (did_contract)(did_id)(fee)(whitelist))
+    EOSLIB_SERIALIZE(global_t2, (did_contract)(did_id)(fee))
 };
 typedef eosio::singleton<"global2"_n, global_t2> global_singleton2;
 

@@ -34,12 +34,26 @@ void redpack::setfee(const extended_asset& fee) {
     _gstate2.fee = fee;
 }
 
-void redpack::setwhitelist(const extended_symbol& token) {
+void redpack::setwhitelist(const name& contract, const symbol& sym, const time_point_sec& expired_time) {
     require_auth( _self );
-    int64_t value = amax::token::get_supply(token.get_contract(), token.get_symbol().code()).amount;
+    int64_t value = amax::token::get_supply(contract, sym.code()).amount;
     CHECKC( value > 0, err::SYMBOL_MISMATCH, "symbol mismatch" );
     
-    _gstate2.whitelist.insert(token);
+    tokenlist_t::idx_t tokenlist_tbl(_self, _self.value);
+    auto tokenlist_index = tokenlist_tbl.get_index<"symcontract"_n>();
+    uint128_t sec_index = get_unionid(contract, sym.raw());
+    auto tokenlist_iter = tokenlist_index.find(sec_index);
+    bool is_exists = tokenlist_iter != tokenlist_index.end();
+    auto tid = is_exists ? tokenlist_iter->id : tokenlist_tbl.available_primary_key();
+    tokenlist_t token(tid);
+    if (is_exists){
+        token.expired_time  = expired_time;
+    }else{
+        token.expired_time  = expired_time;
+        token.sym           = sym;
+        token.contract      = contract;
+    }
+    _db.set(token, _self);
 }
 
 //issue-in op: transfer tokens to the contract and lock them according to the given plan
@@ -66,15 +80,14 @@ void redpack::_token_transfer( const name& from, const name& to, const asset& qu
     if (parts.size() == 4) {
         
         name receiver_contract = get_first_receiver();
-        extended_symbol extended_quantity_symbol = extended_symbol(quantity.symbol, receiver_contract); 
-        if (!_gstate2.whitelist.count(extended_quantity_symbol)) {
-            tokenlist_t::idx_t tokenlist_tbl(_self, _self.value);
-            auto tokenlist_index = tokenlist_tbl.get_index<"symcontract"_n>();
-            uint128_t sec_index = get_unionid(receiver_contract, quantity.symbol.raw());
-            auto tokenlist_iter = tokenlist_index.find(sec_index);
-            CHECKC( tokenlist_iter != tokenlist_index.end(), err::NON_RENEWAL, "non-renewal" );
-            CHECKC( tokenlist_iter->expired_time > time_point_sec(current_time_point()), err::NON_RENEWAL, "non-renewal" );
-       }
+        
+        tokenlist_t::idx_t tokenlist_tbl(_self, _self.value);
+        auto tokenlist_index = tokenlist_tbl.get_index<"symcontract"_n>();
+        uint128_t sec_index = get_unionid(receiver_contract, quantity.symbol.raw());
+        auto tokenlist_iter = tokenlist_index.find(sec_index);
+        CHECKC( tokenlist_iter != tokenlist_index.end(), err::NON_RENEWAL, "non-renewal" );
+        CHECKC( tokenlist_iter->expired_time > time_point_sec(current_time_point()), err::NON_RENEWAL, "non-renewal" );
+    
 
         auto code = name(parts[3]);
         redpack_t redpack(code);
@@ -117,9 +130,6 @@ void redpack::_token_transfer( const name& from, const name& to, const asset& qu
         int64_t value = amax::token::get_supply(contract, redpcak_symbol.code()).amount;
         CHECKC( value > 0, err::SYMBOL_MISMATCH, "symbol mismatch" );
         
-        extended_symbol token_symbol = extended_symbol(redpcak_symbol, contract);
-        CHECKC( !_gstate2.whitelist.count(token_symbol), err::IN_THE_WHITELIST, "in the whitelist" );
-
         tokenlist_t::idx_t tokenlist_tbl(_self, _self.value);
         auto tokenlist_index = tokenlist_tbl.get_index<"symcontract"_n>();
         uint128_t sec_index = get_unionid(contract, redpcak_symbol.raw());
