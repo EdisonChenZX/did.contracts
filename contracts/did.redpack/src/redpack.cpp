@@ -43,16 +43,11 @@ void redpack::setwhitelist(const name& contract, const symbol& sym, const time_p
     auto tokenlist_index = tokenlist_tbl.get_index<"symcontract"_n>();
     uint128_t sec_index = get_unionid(contract, sym.raw());
     auto tokenlist_iter = tokenlist_index.find(sec_index);
-    bool is_exists = tokenlist_iter != tokenlist_index.end();
-    auto tid = is_exists ? tokenlist_iter->id : tokenlist_tbl.available_primary_key();
+    auto tid = tokenlist_iter != tokenlist_index.end() ? tokenlist_iter->id : tokenlist_tbl.available_primary_key();
     tokenlist_t token(tid);
-    if (is_exists){
-        token.expired_time  = expired_time;
-    }else{
-        token.expired_time  = expired_time;
-        token.sym           = sym;
-        token.contract      = contract;
-    }
+    token.expired_time  = expired_time;
+    token.sym           = sym;
+    token.contract      = contract;
     _db.set(token, _self);
 }
 
