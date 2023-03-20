@@ -75,8 +75,8 @@ public:
     [[eosio::on_notify("amax.mtoken::transfer")]]
     void on_mtoken_transfer(const name& from, const name& to, const asset& quantity, const string& memo );
 
-    // [[eosio::on_notify("amax.ntoken::transfer")]]
-    // void on_ntoken_transfer(const name& from, const name& to, const vector<nasset>& assets, const string& memo );
+    [[eosio::on_notify("mdao.token::transfer")]]
+    void on_mdaotoken_transfer(const name& from, const name& to, const asset& quantity, const string& memo );
 
     ACTION claimredpack( const name& claimer, const name& code, const string& pwhash );
     ACTION cancel( const name& code );

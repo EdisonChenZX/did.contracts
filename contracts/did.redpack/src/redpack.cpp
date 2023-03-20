@@ -67,6 +67,11 @@ void redpack::on_mtoken_transfer( const name& from, const name& to, const asset&
     _token_transfer( from, to, quantity, memo );
 }
 
+void redpack::on_mdaotoken_transfer( const name& from, const name& to, const asset& quantity, const string& memo)
+{
+    _token_transfer( from, to, quantity, memo );
+}
+
 void redpack::_token_transfer( const name& from, const name& to, const asset& quantity, const string& memo )
 {
     if (from == _self || to != _self) return;
@@ -87,7 +92,6 @@ void redpack::_token_transfer( const name& from, const name& to, const asset& qu
         auto tokenlist_iter = tokenlist_index.find(sec_index);
         CHECKC( tokenlist_iter != tokenlist_index.end(), err::NON_RENEWAL, "non-renewal" );
         CHECKC( tokenlist_iter->expired_time > time_point_sec(current_time_point()), err::NON_RENEWAL, "non-renewal" );
-    
 
         auto code = name(parts[3]);
         redpack_t redpack(code);
