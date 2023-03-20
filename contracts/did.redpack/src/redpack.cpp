@@ -134,16 +134,14 @@ void redpack::_token_transfer( const name& from, const name& to, const asset& qu
         uint128_t sec_index = get_unionid(contract, redpcak_symbol.raw());
         auto tokenlist_iter = tokenlist_index.find(sec_index);
         bool is_exists = tokenlist_iter != tokenlist_index.end();
+        if (is_exists)
+            CHECKC( tokenlist_iter->expired_time < time_point_sec(current_time_point()), err::NOT_EXPIRED, "not expired" );
+            
         auto tid = is_exists ? tokenlist_iter->id : tokenlist_tbl.available_primary_key();
         tokenlist_t token(tid);
-        if (is_exists){
-            CHECKC( tokenlist_iter->expired_time < time_point_sec(current_time_point()), err::NOT_EXPIRED, "not expired" );
-            token.expired_time  = time_point_sec(current_time_point()) + seconds_per_month;
-        }else{
-            token.expired_time  = time_point_sec(current_time_point()) + seconds_per_month;
-            token.sym           = redpcak_symbol;
-            token.contract      = contract;
-        }
+        token.expired_time  = time_point_sec(current_time_point()) + seconds_per_month;
+        token.sym           = redpcak_symbol;
+        token.contract      = contract;
         _db.set(token, _self);
     } else {
         CHECKC( false, err::INVALID_FORMAT, "invalid format" );
