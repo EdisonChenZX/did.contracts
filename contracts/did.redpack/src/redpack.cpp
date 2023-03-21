@@ -126,8 +126,9 @@ void redpack::_token_transfer( const name& from, const name& to, const asset& qu
 
         symbol redpcak_symbol= symbol_from_string(parts[0]);
         name contract = name(parts[1]);
-        int64_t value = amax::token::get_supply(contract, redpcak_symbol.code()).amount;
-        CHECKC( value > 0, err::SYMBOL_MISMATCH, "symbol mismatch" );
+        asset value = amax::token::get_supply(contract, redpcak_symbol.code());
+        CHECKC( value.amount > 0, err::SYMBOL_MISMATCH, "symbol mismatch" );
+        CHECKC( value.symbol == redpcak_symbol, err::SYMBOL_MISMATCH, "symbol mismatch" );
         
         tokenlist_t::idx_t tokenlist_tbl(_self, _self.value);
         auto tokenlist_index = tokenlist_tbl.get_index<"symcontract"_n>();
