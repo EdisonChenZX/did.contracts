@@ -81,7 +81,6 @@ public:
     ACTION claimredpack( const name& claimer, const name& code, const string& pwhash );
     ACTION cancel( const name& code );
     ACTION delclaims( const uint64_t& max_rows );
-    ACTION delredpacks( const name& code );
 
     ACTION init(const name& admin, const uint16_t& hours, const bool& did_required, const uint64_t& did_id, const name& did_contract) {
         require_auth( _self );

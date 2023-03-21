@@ -270,16 +270,6 @@ void redpack::delclaims( const uint64_t& max_rows )
     CHECKC(count > 0, err::NONE_DELETED, "delete invalid");
 }
 
-void redpack::delredpacks(const name& code){
-    require_auth( _self );
-
-    redpack_t::idx_t redpacks(_self, _self.value);
-    auto redpack_itr = redpacks.find(code.value);
-    while(redpack_itr != redpacks.end()){
-        redpack_itr =redpacks.erase(redpack_itr);
-    }
-}
-
 // asset redpack::_calc_fee(const asset& fee, const uint64_t count) {
 //     // calc order quantity value by price
 //     auto value = multiply<uint64_t>(fee.amount, count);
