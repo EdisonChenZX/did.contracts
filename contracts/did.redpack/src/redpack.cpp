@@ -101,7 +101,7 @@ void redpack::_token_transfer( const name& from, const name& to, const asset& qu
                err::TYPE_INVALID, "redpack type invalid");
 
         if ((redpack_type)type == redpack_type::DID_RANDOM || (redpack_type)type == redpack_type::DID_MEAN)
-            CHECKC(_gstate.did_required, err::UNDER_MAINTENANCE, "did redpack is under maintenance");
+            CHECKC(_gstate.did_supported, err::UNDER_MAINTENANCE, "did redpack is under maintenance");
 
         CHECKC((quantity / count).amount >= MIN_SINGLE_REDPACK, err::QUANTITY_NOT_ENOUGH, "not enough ");
 
