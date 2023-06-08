@@ -173,8 +173,12 @@ void didtoken::add_balance( const name& owner, const nasset& value, const name& 
 }
 
 void didtoken::setacctperms(const name& issuer, const name& to, const nsymbol& symbol,  const bool& allowsend, const bool& allowrecv) {
-    require_auth( issuer );
-    check( is_account( to ), "to account does not exist");
+   require_auth( issuer );
+   check( is_account( to ), "to account does not exist");
+
+   auto nstats = nstats_t::idx_t( _self, _self.value );
+   const auto& st = nstats.get( symbol.id );
+   check( issuer == st.issuer, "issuer: " + st.issuer.to_string() + " vs " + issuer.to_string() );
 
    auto acnts = account_t::idx_t( get_self(), to.value );
    const auto& it = acnts.find( symbol.raw());
