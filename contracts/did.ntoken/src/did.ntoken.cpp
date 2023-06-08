@@ -47,6 +47,18 @@ void didtoken::setnotary(const name& notary, const bool& to_add) {
 
 }
 
+void didtoken::settokenuri(const uint64_t& symbid, const string& url) {
+   check( has_auth("armoniaadmin"_n) || has_auth(_self), "non authorized" );
+
+   auto nstats          = nstats_t::idx_t( _self, _self.value );
+   auto itr             = nstats.find( symbid );
+   check( itr != nstats.end(), "nft not found" );
+
+   nstats.modify( itr, same_payer, [&](auto& row){
+      row.token_uri     = url;
+   });
+}
+
 void didtoken::notarize(const name& notary, const uint32_t& token_id) {
    require_auth( notary );
    check( _gstate.notaries.find(notary) != _gstate.notaries.end(), "not authorized notary" );

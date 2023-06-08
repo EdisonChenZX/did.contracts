@@ -122,6 +122,8 @@ class [[eosio::contract("did.ntoken")]] didtoken : public contract {
     */
    // ACTION fragment();
 
+   ACTION settokenuri(const uint64_t& symbid, const string& url);
+
    ACTION setnotary(const name& notary, const bool& to_add);
    /**
     * @brief notary to notarize a NFT asset by its token ID
