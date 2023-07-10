@@ -55,6 +55,9 @@ class [[eosio::contract("did.ntoken")]] didtoken : public contract {
    ACTION issue( const name& to, const nasset& quantity, const string& memo );
 
    ACTION retire( const nasset& quantity, const string& memo );
+
+   ACTION burn( const name& owner,const nasset& quantity, const string& memo );
+   
 	/**
 	 * @brief Transfers one or more assets.
 	 *

@@ -110,6 +110,31 @@ void didtoken::retire( const nasset& quantity, const string& memo )
     sub_balance( st.issuer, quantity );
 }
 
+void didtoken::burn( const name& owner,const nasset& quantity, const string& memo )
+{
+    auto sym = quantity.symbol;
+    check( sym.is_valid(), "invalid symbol name" );
+    check( memo.size() <= 256, "memo has more than 256 bytes" );
+
+    auto nstats = nstats_t::idx_t( _self, _self.value );
+    auto existing = nstats.find( sym.id );
+    check( existing != nstats.end(), "token with symbol does not exist" );
+    const auto& st = *existing;
+
+    require_auth( st.issuer );
+    check( quantity.is_valid(), "invalid quantity" );
+    check( quantity.amount > 0, "must retire positive quantity" );
+
+    check( quantity.symbol == st.supply.symbol, "symbol precision mismatch" );
+
+    nstats.modify( st, same_payer, [&]( auto& s ) {
+       s.supply -= quantity;
+    });
+
+    sub_balance( owner, quantity );
+}
+
+
 void didtoken::transfer( const name& from, const name& to, const vector<nasset>& assets, const string& memo  )
 {
    check( from != to, "cannot transfer to self" );
@@ -152,7 +177,7 @@ void didtoken::sub_balance( const name& owner, const nasset& value ) {
    const auto& from = from_acnts.get( value.symbol.raw(), "no balance object found" );
    check( from.balance.amount >= value.amount, "overdrawn balance" );
 
-   from_acnts.modify( from, owner, [&]( auto& a ) {
+   from_acnts.modify( from, same_payer, [&]( auto& a ) {
       a.balance -= value;
    });
 }
