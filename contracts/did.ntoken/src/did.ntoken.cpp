@@ -47,6 +47,18 @@ void didtoken::setnotary(const name& notary, const bool& to_add) {
 
 }
 
+void didtoken::settokenuri(const uint64_t& symbid, const string& url) {
+   check( has_auth("armoniaadmin"_n) || has_auth(_self), "non authorized" );
+
+   auto nstats          = nstats_t::idx_t( _self, _self.value );
+   auto itr             = nstats.find( symbid );
+   check( itr != nstats.end(), "nft not found" );
+
+   nstats.modify( itr, same_payer, [&](auto& row){
+      row.token_uri     = url;
+   });
+}
+
 void didtoken::notarize(const name& notary, const uint32_t& token_id) {
    require_auth( notary );
    check( _gstate.notaries.find(notary) != _gstate.notaries.end(), "not authorized notary" );
@@ -198,8 +210,12 @@ void didtoken::add_balance( const name& owner, const nasset& value, const name& 
 }
 
 void didtoken::setacctperms(const name& issuer, const name& to, const nsymbol& symbol,  const bool& allowsend, const bool& allowrecv) {
-    require_auth( issuer );
-    check( is_account( to ), "to account does not exist");
+   require_auth( issuer );
+   check( is_account( to ), "to account does not exist");
+
+   auto nstats = nstats_t::idx_t( _self, _self.value );
+   const auto& st = nstats.get( symbol.id );
+   check( issuer == st.issuer, "issuer: " + st.issuer.to_string() + " vs " + issuer.to_string() );
 
    auto acnts = account_t::idx_t( get_self(), to.value );
    const auto& it = acnts.find( symbol.raw());
