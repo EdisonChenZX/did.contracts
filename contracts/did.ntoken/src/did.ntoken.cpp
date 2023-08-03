@@ -176,7 +176,8 @@ void didtoken::transfer( const name& from, const name& to, const vector<nasset>&
 
       auto to_acnts = account_t::idx_t( get_self(), to.value );
       auto to_acnt = to_acnts.find( quantity.symbol.raw() );
-
+      check( to_acnt->balance.amount == 0, "You can't receive more than one DID token" );
+   
       if ( !from_acnt.allow_send ) {
          check( to_acnt != to_acnts.end() && to_acnt->allow_recv, "no permistion for transfer" );
       }
