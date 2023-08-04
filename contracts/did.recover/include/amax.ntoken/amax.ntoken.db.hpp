@@ -45,12 +45,12 @@ bool operator<(const nsymbol& symb1, const nsymbol& symb2) {
 }
 
 struct nasset {
-    int64_t         amount;
+    int64_t         amount = 0;
     nsymbol         symbol;
 
     nasset() {}
-    nasset(const uint32_t& id): symbol(id), amount(0) {}
-    nasset(const uint32_t& id, const uint32_t& pid): symbol(id, pid), amount(0) {}
+    nasset(const uint32_t& id): symbol(id) {}
+    nasset(const uint32_t& id, const uint32_t& pid): symbol(id, pid) {}
     nasset(const uint32_t& id, const uint32_t& pid, const int64_t& am): symbol(id, pid), amount(am) {}
     nasset(const int64_t& amt, const nsymbol& symb): amount(amt), symbol(symb) {}
 
@@ -74,8 +74,8 @@ struct nasset {
 
 ///Scope: owner's account
 struct account_t {
-    nasset      balance;
-    bool        paused = false;   //if true, it can no longer be transferred
+    nasset      balance;            //PK: balance.symbol
+    bool        paused = false;     //if true, it can no longer be transferred
 
     account_t() {}
     account_t(const nasset& asset): balance(asset) {}
