@@ -93,22 +93,25 @@ void redpack::on_token_transfer( const name& from, const name& to, const asset& 
         CHECKC(!_db.get(redpack), err::RED_PACK_EXIST, "code is already exists");
         
         auto count = stoi(string(parts[1]));
-        auto type = stoi(string(parts[2]));
-        CHECKC((redpack_type)type == redpack_type::RANDOM ||
-                   (redpack_type)type == redpack_type::MEAN ||
-                   (redpack_type)type == redpack_type::DID_RANDOM ||
-                   (redpack_type)type == redpack_type::DID_MEAN,
-               err::TYPE_INVALID, "redpack type invalid");
+        auto rp_type = (redpack_type) stoi(string(parts[2]));
+        CHECKC( rp_type == redpack_type::RANDOM || rp_type == redpack_type::MEAN ||
+                rp_type == redpack_type::DID_RANDOM || rp_type == redpack_type::DID_MEAN, err::TYPE_INVALID, "redpack type invalid" )
 
-        auto is_did_type = ( (redpack_type)type == redpack_type::DID_RANDOM || (redpack_type)type == redpack_type::DID_MEAN );
+        auto symb = quantity.symbol.code().to_string();
+        auto is_did_type = ( rp_type == redpack_type::DID_RANDOM || rp_type == redpack_type::DID_MEAN );
         if (is_did_type) {
             CHECKC( _gstate.did_supported, err::UNDER_MAINTENANCE, "did redpack not enabled" )
-            CHECKC( quantity.symbol.code().to_string() == "AMAX" || quantity.symbol.code().to_string() == "MUSDT", err::DID_PACK_SYMBOL_ERR, "DID redpack tokens can only be either AMAX or MUSDT" )
+            CHECKC( symb == "AMAX" || symb == "MUSDT" || symb == "MUSDC", err::DID_PACK_SYMBOL_ERR, "DID redpack tokens can only be AMAX|MUSDT|MUSDC" )
+
+            auto min_quant = ( symb == "AMAX" ) ? 1 : 10;
+            CHECKC( quantity.amount / get_precision(quantity) >= min_quant, err::QUANTITY_NOT_ENOUGH, "Minimal total " + to_string(min_quant) + symb + " required" )
+
+        } else {
+            CHECKC( quantity.amount / count / get_precision(quantity) >= 100, err::QUANTITY_NOT_ENOUGH,  "Minimal unit 100 " + symb + " required" )
         }
 
-        CHECKC(( quantity / count).amount >= MIN_SINGLE_REDPACK, err::QUANTITY_NOT_ENOUGH, "insufficient unit amount: <" + to_string( MIN_SINGLE_REDPACK ) )
-
         redpack_t::idx_t redpacks(_self, _self.value);
+        auto now = current_time_point();
         redpacks.emplace(_self, [&](auto &row){
             row.code 					    = code;
             row.sender 			            = from;
@@ -118,9 +121,9 @@ void redpack::on_token_transfer( const name& from, const name& to, const asset& 
             row.remain_quantity		        = quantity;
             row.remain_count	            = count;
             row.status			            = redpack_status::CREATED;
-            row.type			            = type;
-            row.created_at                  = time_point_sec( current_time_point() );
-            row.updated_at                  = time_point_sec( current_time_point() ); 
+            row.type			            = (uint16_t) rp_type;
+            row.created_at                  = now;
+            row.updated_at                  = now; 
         });
 
     } else if (parts.size() == 2) {  //pay fees of issuing the redpack out
