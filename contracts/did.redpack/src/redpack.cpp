@@ -52,22 +52,22 @@ void redpack::setwhitelist(const name& contract, const symbol& sym, const time_p
 }
 
 //issue-in op: transfer tokens to the contract and lock them according to the given plan
-void redpack::on_token_transfer( const name& from, const name& to, const asset& quantity, const string& memo)
-{
-    _token_transfer( from, to, quantity, memo );
-}
+// void redpack::on_token_transfer( const name& from, const name& to, const asset& quantity, const string& memo)
+// {
+//     _token_transfer( from, to, quantity, memo );
+// }
 
-void redpack::on_mtoken_transfer( const name& from, const name& to, const asset& quantity, const string& memo)
-{
-    _token_transfer( from, to, quantity, memo );
-}
+// void redpack::on_mtoken_transfer( const name& from, const name& to, const asset& quantity, const string& memo)
+// {
+//     _token_transfer( from, to, quantity, memo );
+// }
 
-void redpack::on_mdaotoken_transfer( const name& from, const name& to, const asset& quantity, const string& memo)
-{
-    _token_transfer( from, to, quantity, memo );
-}
+// void redpack::on_mdaotoken_transfer( const name& from, const name& to, const asset& quantity, const string& memo)
+// {
+//     _token_transfer( from, to, quantity, memo );
+// }
 
-void redpack::_token_transfer( const name& from, const name& to, const asset& quantity, const string& memo )
+void redpack::on_token_transfer( const name& from, const name& to, const asset& quantity, const string& memo )
 {
     if (from == _self || to != _self) return;
 
@@ -77,7 +77,7 @@ void redpack::_token_transfer( const name& from, const name& to, const asset& qu
     //${pwhash} : count : type : code
     //asset:contract
     auto parts = split(memo, ":");
-    if (parts.size() == 4) {
+    if (parts.size() == 4) {    //deposit tokens into the redpack
         
         name receiver_contract = get_first_receiver();
         
@@ -100,10 +100,13 @@ void redpack::_token_transfer( const name& from, const name& to, const asset& qu
                    (redpack_type)type == redpack_type::DID_MEAN,
                err::TYPE_INVALID, "redpack type invalid");
 
-        if ((redpack_type)type == redpack_type::DID_RANDOM || (redpack_type)type == redpack_type::DID_MEAN)
-            CHECKC(_gstate.did_supported, err::UNDER_MAINTENANCE, "did redpack is under maintenance");
+        auto is_did_type = ( (redpack_type)type == redpack_type::DID_RANDOM || (redpack_type)type == redpack_type::DID_MEAN );
+        if (is_did_type) {
+            CHECKC( _gstate.did_supported, err::UNDER_MAINTENANCE, "did redpack not enabled" )
+            CHECKC( quantity.symbol.code().to_string() == "AMAX" || quantity.symbol.code().to_string() == "MUSDT", err::DID_PACK_SYMBOL_ERR, "DID redpack tokens can only be either AMAX or MUSDT" )
+        }
 
-        CHECKC((quantity / count).amount >= MIN_SINGLE_REDPACK, err::QUANTITY_NOT_ENOUGH, "not enough ");
+        CHECKC(( quantity / count).amount >= MIN_SINGLE_REDPACK, err::QUANTITY_NOT_ENOUGH, "insufficient unit amount: <" + to_string( MIN_SINGLE_REDPACK ) )
 
         redpack_t::idx_t redpacks(_self, _self.value);
         redpacks.emplace(_self, [&](auto &row){
@@ -119,10 +122,11 @@ void redpack::_token_transfer( const name& from, const name& to, const asset& qu
             row.created_at                  = time_point_sec( current_time_point() );
             row.updated_at                  = time_point_sec( current_time_point() ); 
         });
-    } else if (parts.size() == 2) {
+
+    } else if (parts.size() == 2) {  //pay fees of issuing the redpack out
         name receiver_contract = get_first_receiver();
         extended_asset extended_quantity = extended_asset(quantity, receiver_contract); 
-        CHECKC(extended_quantity >= _gstate2.fee, err::QUANTITY_NOT_ENOUGH, "quantity not enough ");
+        CHECKC(extended_quantity >= _gstate2.fee, err::QUANTITY_NOT_ENOUGH, "insufficient payment for fees");
 
         symbol redpcak_symbol= symbol_from_string(parts[0]);
         name contract = name(parts[1]);
@@ -134,18 +138,19 @@ void redpack::_token_transfer( const name& from, const name& to, const asset& qu
         auto tokenlist_index = tokenlist_tbl.get_index<"symcontract"_n>();
         uint128_t sec_index = get_unionid(contract, redpcak_symbol.raw());
         auto tokenlist_iter = tokenlist_index.find(sec_index);
-        bool is_exists = tokenlist_iter != tokenlist_index.end();
-        if (is_exists)
+        bool found = tokenlist_iter != tokenlist_index.end();
+        if (found)
             CHECKC( tokenlist_iter->expired_time < time_point_sec(current_time_point()), err::NOT_EXPIRED, "not expired" );
             
-        auto tid = is_exists ? tokenlist_iter->id : tokenlist_tbl.available_primary_key();
+        auto tid = found ? tokenlist_iter->id : tokenlist_tbl.available_primary_key();
         tokenlist_t token(tid);
         token.expired_time  = time_point_sec(current_time_point()) + seconds_per_month;
         token.sym           = redpcak_symbol;
         token.contract      = contract;
         _db.set(token, _self);
+
     } else {
-        CHECKC( false, err::INVALID_FORMAT, "invalid format" );
+        CHECKC( false, err::INVALID_FORMAT, "invalid memo format" );
     }
 }
 

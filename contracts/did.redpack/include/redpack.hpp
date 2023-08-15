@@ -28,7 +28,8 @@ enum class err: uint8_t {
    UNDER_MAINTENANCE    = 17,
    NONE_DELETED         = 19,
    IN_THE_WHITELIST     = 20,
-   NON_RENEWAL          = 21
+   NON_RENEWAL          = 21,
+   DID_PACK_SYMBOL_ERR  = 31
 };
 
 enum class redpack_type: uint8_t {
@@ -70,13 +71,15 @@ public:
     ACTION setwhitelist(const name& contract, const symbol& sym, const time_point_sec& expired_time);
 
     [[eosio::on_notify("amax.token::transfer")]]
+    [[eosio::on_notify("amax.mtoken::transfer")]]
+    [[eosio::on_notify("mdao.token::transfer")]]
     void on_token_transfer(const name& from, const name& to, const asset& quantity, const string& memo);
 
-    [[eosio::on_notify("amax.mtoken::transfer")]]
-    void on_mtoken_transfer(const name& from, const name& to, const asset& quantity, const string& memo );
+    // [[eosio::on_notify("amax.mtoken::transfer")]]
+    // void on_mtoken_transfer(const name& from, const name& to, const asset& quantity, const string& memo );
 
-    [[eosio::on_notify("mdao.token::transfer")]]
-    void on_mdaotoken_transfer(const name& from, const name& to, const asset& quantity, const string& memo );
+    // [[eosio::on_notify("mdao.token::transfer")]]
+    // void on_mdaotoken_transfer(const name& from, const name& to, const asset& quantity, const string& memo );
 
     ACTION claimredpack( const name& claimer, const name& code, const string& pwhash );
     ACTION cancel( const name& code );
