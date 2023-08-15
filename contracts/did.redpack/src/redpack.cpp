@@ -107,7 +107,7 @@ void redpack::on_token_transfer( const name& from, const name& to, const asset& 
             CHECKC( quantity.amount / get_precision(quantity) >= min_quant, err::QUANTITY_NOT_ENOUGH, "Minimal total " + to_string(min_quant) + symb + " required" )
 
         } else {
-            CHECKC( quantity.amount / count / get_precision(quantity) >= 100, err::QUANTITY_NOT_ENOUGH,  "Minimal unit 100 " + symb + " required" )
+            CHECKC( quantity.amount / count >= 100, err::QUANTITY_NOT_ENOUGH,  "Minimal unit 100 " + symb + " required" )
         }
 
         redpack_t::idx_t redpacks(_self, _self.value);
