@@ -51,23 +51,23 @@ void redpack::setwhitelist(const name& contract, const symbol& sym, const time_p
     _db.set(token, _self);
 }
 
-//issue-in op: transfer tokens to the contract and lock them according to the given plan
-// void redpack::on_token_transfer( const name& from, const name& to, const asset& quantity, const string& memo)
-// {
-//     _token_transfer( from, to, quantity, memo );
-// }
+// issue-in op: transfer tokens to the contract and lock them according to the given plan
+void redpack::on_atoken_transfer( const name& from, const name& to, const asset& quantity, const string& memo)
+{
+    _token_transfer( from, to, quantity, memo );
+}
 
-// void redpack::on_mtoken_transfer( const name& from, const name& to, const asset& quantity, const string& memo)
-// {
-//     _token_transfer( from, to, quantity, memo );
-// }
+void redpack::on_mtoken_transfer( const name& from, const name& to, const asset& quantity, const string& memo)
+{
+    _token_transfer( from, to, quantity, memo );
+}
 
-// void redpack::on_mdaotoken_transfer( const name& from, const name& to, const asset& quantity, const string& memo)
-// {
-//     _token_transfer( from, to, quantity, memo );
-// }
+void redpack::on_dtoken_transfer( const name& from, const name& to, const asset& quantity, const string& memo)
+{
+    _token_transfer( from, to, quantity, memo );
+}
 
-void redpack::on_token_transfer( const name& from, const name& to, const asset& quantity, const string& memo )
+void redpack::_token_transfer( const name& from, const name& to, const asset& quantity, const string& memo )
 {
     if (from == _self || to != _self) return;
 
@@ -109,6 +109,12 @@ void redpack::on_token_transfer( const name& from, const name& to, const asset& 
         } else {
             CHECKC( quantity.amount / count >= 100, err::QUANTITY_NOT_ENOUGH,  "Minimal unit 100 " + symb + " required" )
         }
+
+        // CHECKC( symb == "AMAX" || symb == "MUSDT" || symb == "MUSDC", err::DID_PACK_SYMBOL_ERR, "redpack can only be AMAX|MUSDT|MUSDC" )
+        // CHECKC( count <= 200, err::INVALID_FORMAT, "redpack count cannot be greater than 200" )
+        // auto min_quant = ( symb == "AMAX" ) ? 1 : 10;
+        // CHECKC( quantity.amount / get_precision(quantity) >= min_quant, err::QUANTITY_NOT_ENOUGH, "Minimal total " + to_string(min_quant) + symb + " required" )
+
 
         redpack_t::idx_t redpacks(_self, _self.value);
         auto now = current_time_point();

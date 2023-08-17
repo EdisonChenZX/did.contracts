@@ -71,15 +71,13 @@ public:
     ACTION setwhitelist(const name& contract, const symbol& sym, const time_point_sec& expired_time);
 
     [[eosio::on_notify("amax.token::transfer")]]
+    void on_atoken_transfer(const name& from, const name& to, const asset& quantity, const string& memo);
+
     [[eosio::on_notify("amax.mtoken::transfer")]]
+    void on_mtoken_transfer(const name& from, const name& to, const asset& quantity, const string& memo );
+
     [[eosio::on_notify("mdao.token::transfer")]]
-    void on_token_transfer(const name& from, const name& to, const asset& quantity, const string& memo);
-
-    // [[eosio::on_notify("amax.mtoken::transfer")]]
-    // void on_mtoken_transfer(const name& from, const name& to, const asset& quantity, const string& memo );
-
-    // [[eosio::on_notify("mdao.token::transfer")]]
-    // void on_mdaotoken_transfer(const name& from, const name& to, const asset& quantity, const string& memo );
+    void on_dtoken_transfer(const name& from, const name& to, const asset& quantity, const string& memo );
 
     ACTION claimredpack( const name& claimer, const name& code, const string& pwhash );
     ACTION cancel( const name& code );
