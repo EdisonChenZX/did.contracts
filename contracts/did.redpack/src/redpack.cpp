@@ -238,20 +238,20 @@ void redpack::cancel( const name& code )
 {
     redpack_t redpack(code);
     CHECKC( _db.get(redpack), err::RECORD_NO_FOUND, "redpack not found" );
-    // CHECKC( current_time_point() > redpack.created_at + eosio::hours(_gstate.expire_hours), err::NOT_EXPIRED, "expiration date is not reached" );
-    CHECKC( redpack.status == redpack_status::CREATED, err::EXPIRED, "expired already" )
-
-    auto pw_hash = split(redpack.pw_hash, ":");
-    auto contract = pw_hash[1];
-    if (contract.size() == 0) {
-        tokenlist_t::idx_t tokenlist_tbl(_self, _self.value);
-        auto tokenlist_index = tokenlist_tbl.get_index<"sym"_n>();
-        auto tokenlist_iter = tokenlist_index.find(redpack.total_quantity.symbol.raw());
-        CHECKC( tokenlist_iter != tokenlist_index.end(), err::RECORD_NO_FOUND, "token list not found" );
-        TRANSFER_OUT(tokenlist_iter->contract, redpack.sender, redpack.remain_quantity, string("red pack cancel transfer"));
-    } else {
-        auto contract_name = name(pw_hash[1]);
-        TRANSFER_OUT(contract_name, redpack.sender, redpack.remain_quantity, string("red pack cancel transfer"));
+    CHECKC( current_time_point() > redpack.created_at + eosio::hours(_gstate.expire_hours), err::NOT_EXPIRED, "expiration date is not reached" );
+    if(redpack.status == redpack_status::CREATED){
+        auto pw_hash = split(redpack.pw_hash, ":");
+        auto contract = pw_hash[1];
+        if (contract.size() == 0) {
+            tokenlist_t::idx_t tokenlist_tbl(_self, _self.value);
+            auto tokenlist_index = tokenlist_tbl.get_index<"sym"_n>();
+            auto tokenlist_iter = tokenlist_index.find(redpack.total_quantity.symbol.raw());
+            CHECKC( tokenlist_iter != tokenlist_index.end(), err::RECORD_NO_FOUND, "token list not found" );
+            TRANSFER_OUT(tokenlist_iter->contract, redpack.sender, redpack.remain_quantity, string("red pack cancel transfer"));
+        } else {
+            auto contract_name = name(pw_hash[1]);
+            TRANSFER_OUT(contract_name, redpack.sender, redpack.remain_quantity, string("red pack cancel transfer"));
+        }
     }
     _db.del(redpack);
 }
