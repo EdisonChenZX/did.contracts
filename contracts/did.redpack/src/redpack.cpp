@@ -36,8 +36,8 @@ void redpack::setfee(const extended_asset& fee) {
 
 void redpack::setwhitelist(const name& contract, const symbol& sym, const time_point_sec& expired_time) {
     require_auth( _self );
-    int64_t value = amax::token::get_supply(contract, sym.code()).amount;
-    CHECKC( value > 0, err::SYMBOL_MISMATCH, "symbol mismatch" );
+    // int64_t value = amax::token::get_supply(contract, sym.code()).amount;
+    // CHECKC( value > 0, err::SYMBOL_MISMATCH, "symbol mismatch" );
     
     tokenlist_t::idx_t tokenlist_tbl(_self, _self.value);
     auto tokenlist_index = tokenlist_tbl.get_index<"symcontract"_n>();
