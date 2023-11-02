@@ -72,6 +72,11 @@ void redpack::on_cnygtoken_transfer( const name& from, const name& to, const ass
     _token_transfer( from, to, quantity, memo ); 
 }
 
+void redpack::on_tychetoken_transfer( const name& from, const name& to, const asset& quantity, const string& memo) 
+{ 
+    _token_transfer( from, to, quantity, memo ); 
+}
+
 void redpack::_token_transfer( const name& from, const name& to, const asset& quantity, const string& memo )
 {
     if (from == _self || to != _self) return;
@@ -106,10 +111,10 @@ void redpack::_token_transfer( const name& from, const name& to, const asset& qu
         auto is_did_type = ( rp_type == redpack_type::DID_RANDOM || rp_type == redpack_type::DID_MEAN );
         if (is_did_type) {
             CHECKC( _gstate.did_supported, err::UNDER_MAINTENANCE, "did redpack not enabled" )
-            CHECKC( symb == "AMAX" || symb == "MUSDT" || symb == "MUSDC", err::DID_PACK_SYMBOL_ERR, "DID redpack tokens can only be AMAX|MUSDT|MUSDC" )
+            CHECKC( symb == "AMAX" || symb == "MUSDT" || symb == "MUSDC" || symb == "TYCHE", err::DID_PACK_SYMBOL_ERR, "DID redpack tokens can only be AMAX|MUSDT|MUSDC|TYCHE" )
 
-            auto min_quant = ( symb == "AMAX" ) ? 1 : 10;
-            CHECKC( quantity.amount / get_precision(quantity) >= min_quant, err::QUANTITY_NOT_ENOUGH, "Minimal total " + to_string(min_quant) + symb + " required" )
+            // auto min_quant = ( symb == "AMAX" ) ? 1 : 10;
+            // CHECKC( quantity.amount / get_precision(quantity) >= min_quant, err::QUANTITY_NOT_ENOUGH, "Minimal total " + to_string(min_quant) + symb + " required" )
 
         } else {
             CHECKC( quantity.amount / count >= 100, err::QUANTITY_NOT_ENOUGH,  "Minimal unit 100 " + symb + " required" )

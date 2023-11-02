@@ -82,6 +82,9 @@ public:
     [[eosio::on_notify("cnyg.token::transfer")]] 
     void on_cnygtoken_transfer( const name& from, const name& to, const asset& quantity, const string& memo );
 
+    [[eosio::on_notify("tyche.token::transfer")]] 
+    void on_tychetoken_transfer( const name& from, const name& to, const asset& quantity, const string& memo );
+
     ACTION claimredpack( const name& claimer, const name& code, const string& pwhash );
     ACTION cancel( const name& code );
     ACTION delclaims( const uint64_t& max_rows );
