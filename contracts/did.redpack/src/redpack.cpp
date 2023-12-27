@@ -77,6 +77,11 @@ void redpack::on_tychetoken_transfer( const name& from, const name& to, const as
     _token_transfer( from, to, quantity, memo ); 
 }
 
+void redpack::on_armstoken_transfer( const name& from, const name& to, const asset& quantity, const string& memo) 
+{ 
+    _token_transfer( from, to, quantity, memo ); 
+}
+
 void redpack::_token_transfer( const name& from, const name& to, const asset& quantity, const string& memo )
 {
     if (from == _self || to != _self) return;
