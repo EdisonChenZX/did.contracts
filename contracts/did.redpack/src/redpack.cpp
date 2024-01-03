@@ -50,6 +50,7 @@ void redpack::whitelist(const name& contract, const symbol& sym, const time_poin
     if( to_delete ) {
         CHECKC( found, err::RECORD_NO_FOUND, "cannot delete a non-existing item" )
 
+        _db.get( token );
         _db.del( token );
         return;
     }
