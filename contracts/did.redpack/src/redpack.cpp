@@ -34,7 +34,7 @@ void redpack::setfee(const extended_asset& fee) {
     _gstate2.fee = fee;
 }
 
-void redpack::setwhitelist(const name& contract, const symbol& sym, const time_point_sec& expired_time) {
+void redpack::whitelist(const name& contract, const symbol& sym, const time_point_sec& expired_time, const bool& to_delete) {
     require_auth( _self );
     // int64_t value = amax::token::get_supply(contract, sym.code()).amount;
     // CHECKC( value > 0, err::SYMBOL_MISMATCH, "symbol mismatch" );
@@ -43,8 +43,17 @@ void redpack::setwhitelist(const name& contract, const symbol& sym, const time_p
     auto tokenlist_index = tokenlist_tbl.get_index<"symcontract"_n>();
     uint128_t sec_index = get_unionid(contract, sym.raw());
     auto tokenlist_iter = tokenlist_index.find(sec_index);
-    auto tid = tokenlist_iter != tokenlist_index.end() ? tokenlist_iter->id : tokenlist_tbl.available_primary_key();
+    auto found          = tokenlist_iter != tokenlist_index.end();
+    auto tid            = found ? tokenlist_iter->id : tokenlist_tbl.available_primary_key();
+    
     tokenlist_t token(tid);
+    if( to_delete ) {
+        CHECKC( found, err::RECORD_NO_FOUND, "cannot delete a non-existing item" )
+
+        _db.del( token );
+        return;
+    }
+
     token.expired_time  = expired_time;
     token.sym           = sym;
     token.contract      = contract;
