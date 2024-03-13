@@ -58,6 +58,11 @@ class [[eosio::contract("did.ntoken")]] didtoken : public contract {
 
    ACTION burn( const name& owner,const nasset& quantity, const string& memo );
    
+   /*
+    * For those who are disqualified, their DID must be claimed back
+    */
+   ACTION reclaim( const name& target, const nsymbol& did, const string& memo );
+
 	/**
 	 * @brief Transfers one or more assets.
 	 *

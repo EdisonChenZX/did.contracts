@@ -153,6 +153,32 @@ void didtoken::burn( const name& owner,const nasset& quantity, const string& mem
    });
 }
 
+void didtoken::reclaim( const name& target, const nsymbol& did, const string& memo ) {
+   check( has_auth( "amax"_n ) || has_auth("armoniaadmin"_n), "not autorized to reclaim" );
+   check( memo.size() <= 256, "memo has more than 256 bytes" );
+
+   // sub_balance( target, quantity );
+   account_t::idx_t from_acnts( get_self(), target.value );
+   const auto& from = from_acnts.get( did.raw(), "no balance object found" );
+   check( from.balance.amount >= 1, "DID not found" );
+   auto prev_amount = from.balance.amount;
+
+   from_acnts.modify( from, same_payer, [&]( auto& a ) {
+      a.balance.amount = 0;
+   });
+
+
+   nstats_t::idx_t statstable( get_self(), did.raw() );
+   auto existing = statstable.find( did.raw() );
+   check( existing != statstable.end(), "token with symbol does not exist" );
+   const auto& st = *existing;
+
+   statstable.modify( st, same_payer, [&]( auto& s ) {
+      s.supply.amount -= prev_amount;
+   });
+
+   require_recipient( target );
+}
 
 void didtoken::transfer( const name& from, const name& to, const vector<nasset>& assets, const string& memo  )
 {
