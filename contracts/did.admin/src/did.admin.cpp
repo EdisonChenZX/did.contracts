@@ -28,7 +28,7 @@ void did_admin::ontransfer(const name& from, const name& to, const asset& quant,
    if (from == get_self() || to != get_self()) return;
 
    CHECK( from != to, "cannot transfer to self" );
-   CHECK( quant > asset_from_string("0.1 AMAX"), "Please pay at least 0.1 AMAX in order to rebind your DID" )
+   CHECK( quant > asset_from_string("0.10000000 AMAX"), "Please pay at least 0.1 AMAX in order to rebind your DID" )
    CHECK( memo != "",  "empty memo!" )
 
    auto parts                 = split( memo, ":" );
@@ -38,7 +38,7 @@ void did_admin::ontransfer(const name& from, const name& to, const asset& quant,
    auto dest                  = name( parts[2] );
    CHECK( is_account( dest ), "dest account does not exist: " + string(parts[2]) )
 
-   auto burn_quant = asset_from_string("0.05 AMAX");   //0.05 AMAX
+   auto burn_quant = asset_from_string("0.05000000 AMAX");   //0.05 AMAX
    TRANSFER( TOKEN, "oooo"_n, burn_quant, "did rebind" )
 
    auto did = nasset(did_id, 0, 1);
