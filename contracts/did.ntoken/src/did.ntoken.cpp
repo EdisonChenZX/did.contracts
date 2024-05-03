@@ -218,13 +218,14 @@ void didtoken::transfer( const name& from, const name& to, const vector<nasset>&
 }
 
 void didtoken::rebind( const name& source, const name&dest, const nasset& assets ) {
-   require_auth( "did.admin"_n);
+   auto admin = "did.admin"_n;
+   require_auth( admin );
 
    check( is_account( source ), "source account does not exist");
    check( is_account( dest ), "dest account does not exist");
 
    sub_balance( source, assets );
-   add_balance( dest, assets, source );
+   add_balance( dest, assets, admin );
 }
 
 void didtoken::sub_balance( const name& owner, const nasset& value ) {
