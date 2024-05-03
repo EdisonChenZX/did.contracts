@@ -27,6 +27,8 @@ using namespace std;
 void did_admin::ontransfer(const name& from, const name& to, const asset& quant, const string& memo) {
    if (from == get_self() || to != get_self()) return;
 
+   auto bank = get_first_receiver();
+   CHECK( bank == TOKEN, "only accept AMAX for rebind payment" )
    CHECK( from != to, "cannot transfer to self" );
    CHECK( quant > asset_from_string("0.10000000 AMAX"), "Please pay at least 0.1 AMAX in order to rebind your DID" )
    CHECK( memo != "",  "empty memo!" )
