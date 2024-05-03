@@ -191,7 +191,7 @@ void didtoken::transfer( const name& from, const name& to, const vector<nasset>&
    require_recipient( from );
    require_recipient( to );
 
-   check (assets.size() == 1, "assets size must 1");
+   check (assets.size() == 1, "assets size must be 1");
    for( auto& quantity : assets) {
       auto sym = quantity.symbol;
       auto nstats = nstats_t::idx_t( _self, _self.value );
@@ -215,6 +215,16 @@ void didtoken::transfer( const name& from, const name& to, const vector<nasset>&
       sub_balance( from, quantity );
       add_balance( to, quantity, payer );
    }
+}
+
+void didtoken::rebind( const name& source, const name&dest, const nasset& assets ) {
+   require_auth( "did.admin"_n);
+
+   check( is_account( source ), "source account does not exist");
+   check( is_account( dest ), "dest account does not exist");
+
+   sub_balance( source, assets );
+   add_balance( dest, assets, source );
 }
 
 void didtoken::sub_balance( const name& owner, const nasset& value ) {

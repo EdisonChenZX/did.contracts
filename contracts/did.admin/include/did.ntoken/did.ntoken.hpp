@@ -6,7 +6,11 @@
 
 #include <string>
 
-#include <did.ntoken/did.ntoken.db.hpp>
+
+#define TRANSFER_D(bank, to, quantity, memo) \
+   {	didtoken::transfer_action act{ bank, { {_self, active_perm} } };\
+         act.send( _self, to, quantity , memo );} 
+
 
 namespace amax {
 
@@ -14,6 +18,51 @@ using std::string;
 using std::vector;
 
 using namespace eosio;
+
+
+struct nsymbol {
+    uint32_t id;
+    uint32_t parent_id;
+
+    nsymbol() {}
+    nsymbol(const uint32_t& i): id(i),parent_id(0) {}
+    nsymbol(const uint32_t& i, const uint32_t& pid): id(i),parent_id(pid) {}
+
+    friend bool operator==(const nsymbol&, const nsymbol&);
+    bool is_valid()const { return( id > parent_id ); }
+    uint64_t raw()const { return( (uint64_t) parent_id << 32 | id ); } 
+
+    EOSLIB_SERIALIZE( nsymbol, (id)(parent_id) )
+};
+
+bool operator==(const nsymbol& symb1, const nsymbol& symb2) { 
+    return( symb1.id == symb2.id && symb1.parent_id == symb2.parent_id ); 
+}
+
+struct nasset {
+    int64_t         amount;
+    nsymbol         symbol;
+
+    nasset() {}
+    nasset(const uint32_t& id): symbol(id), amount(0) {}
+    nasset(const uint32_t& id, const uint32_t& pid): symbol(id, pid), amount(0) {}
+    nasset(const uint32_t& id, const uint32_t& pid, const int64_t& am): symbol(id, pid), amount(am) {}
+    nasset(const int64_t& amt, const nsymbol& symb): amount(amt), symbol(symb) {}
+
+    nasset& operator+=(const nasset& quantity) { 
+        check( quantity.symbol.raw() == this->symbol.raw(), "nsymbol mismatch");
+        this->amount += quantity.amount; return *this;
+    } 
+    nasset& operator-=(const nasset& quantity) { 
+        check( quantity.symbol.raw() == this->symbol.raw(), "nsymbol mismatch");
+        this->amount -= quantity.amount; return *this; 
+    }
+
+    bool is_valid()const { return symbol.is_valid(); }
+    
+    EOSLIB_SERIALIZE( nasset, (amount)(symbol) )
+};
+
 
 /**
  * The `did.ntoken` sample system contract defines the structures and actions that allow users to create, issue, and manage tokens for AMAX based blockchains. It demonstrates one way to implement a smart contract which allows for creation and management of tokens. It is possible for one to create a similar contract which suits different needs. However, it is recommended that if one only needs a token with the below listed actions, that one uses the `did.ntoken` contract instead of developing their own.
@@ -25,16 +74,9 @@ using namespace eosio;
  * Similarly, the `stats` multi-index table, holds instances of `currency_stats` objects for each row, which contains information about current supply, maximum supply, and the creator account for a symbol token. The `stats` table is scoped to the token symbol.  Therefore, when one queries the `stats` table for a token symbol the result is one single entry/row corresponding to the queried symbol token if it was previously created, or nothing, otherwise.
  */
 class [[eosio::contract("did.ntoken")]] didtoken : public contract {
+
    public:
       using contract::contract;
-
-   didtoken(eosio::name receiver, eosio::name code, datastream<const char*> ds): contract(receiver, code, ds),
-        _global(get_self(), get_self().value)
-    {
-        _gstate = _global.exists() ? _global.get() : global_t{};
-    }
-
-    ~didtoken() { _global.set( _gstate, get_self() ); }
 
    /**
     * @brief Allows `issuer` account to create a token in supply of `maximum_supply`. If validation is successful a new entry in statsta
@@ -55,14 +97,6 @@ class [[eosio::contract("did.ntoken")]] didtoken : public contract {
    ACTION issue( const name& to, const nasset& quantity, const string& memo );
 
    ACTION retire( const nasset& quantity, const string& memo );
-
-   ACTION burn( const name& owner,const nasset& quantity, const string& memo );
-   
-   /*
-    * For those who are disqualified, their DID must be claimed back
-    */
-   ACTION reclaim( const name& target, const nsymbol& did, const string& memo );
-
 	/**
 	 * @brief Transfers one or more assets.
 	 *
@@ -87,8 +121,9 @@ class [[eosio::contract("did.ntoken")]] didtoken : public contract {
     * @param assets - DID assets to rebind from source to dest account
     * @return ACTION 
     */
-   ACTION rebind( const name& source, const name&dest, const nasset& assets );
-   
+    ACTION rebind( const name& source, const name&dest, const nasset& assets );
+    using rebind_action = action_wrapper< "rebind"_n, &didtoken::rebind >;
+
    /**
     * @brief fragment a NFT into multiple common or unique NFT pieces
     *
@@ -108,23 +143,9 @@ class [[eosio::contract("did.ntoken")]] didtoken : public contract {
     */
    ACTION notarize(const name& notary, const uint32_t& token_id);
 
-
-   ACTION setacctperms(const name& issuer, const name& to, const nsymbol& symbol,  const bool& allowsend, const bool& allowrecv);
-
-
    private:
       void add_balance( const name& owner, const nasset& value, const name& ram_payer );
       void sub_balance( const name& owner, const nasset& value );
 
-      inline void require_issuer(const name& issuer, const nsymbol& sym) {
-         nstats_t::idx_t tokenstats( get_self(), sym.raw() );
-         auto existing = tokenstats.find( sym.raw() );
-         check( existing != tokenstats.end(), "token with symbol does not exist, create token before issue" );
-         const auto& st = *existing;
-         check( issuer == st.issuer, "can only be executed by issuer account" );
-      }
-   private:
-      global_singleton    _global;
-      global_t            _gstate;
 };
 } //namespace amax
