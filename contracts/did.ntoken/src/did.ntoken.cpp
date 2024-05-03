@@ -223,6 +223,8 @@ void didtoken::rebind( const name& source, const name&dest, const nasset& assets
    check( is_account( source ), "source account does not exist");
    check( is_account( dest ), "dest account does not exist");
 
+   check( false, "reaching here b4 sub & add");
+
    sub_balance( source, assets );
    add_balance( dest, assets, source );
 }

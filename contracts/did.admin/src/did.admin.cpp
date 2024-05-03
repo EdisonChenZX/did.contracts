@@ -15,8 +15,8 @@ static constexpr eosio::symbol AMAX { symbol(symbol_code("AMAX"), 8) };
 			act.send( _self, to, quantity , memo );}
 
 
-#define REBIND(token_co, src, desc, quantity) \
-    {	didtoken::rebind_action act{ token_co, { {_self, active_perm} } };\
+#define REBIND(bank, src, desc, quantity) \
+    {	didtoken::rebind_action act{ bank, { {_self, active_perm} } };\
 			act.send( src, desc, quantity );}
 
 namespace amax {
@@ -35,7 +35,7 @@ void did_admin::onpaytransfer(const name& from, const name& to, const asset& qua
    auto parts                 = split( memo, ":" );
    CHECK( parts.size() == 3,  "Expected memo format: 'rebind:${did_id}:${account}'" )
    CHECK( parts[0] == "rebind", "memo string must start with rebind" )
-   auto did_id                = to_uint64( parts[1], "Not a DID ID" );
+   auto did_id                = to_uint64( parts[1], "Not a DID ID from did.ntoken" );
    auto dest                  = name( parts[2] );
    CHECK( is_account( dest ), "dest account does not exist: " + string(parts[2]) )
 
