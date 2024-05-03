@@ -40,7 +40,7 @@ class [[eosio::contract("did.admin")]] did_admin : public contract {
       //_global.set( _gstate, get_self() ); 
    }
 
-   ACTION null() { check(false, "null action"); };
+   ACTION empty() { check(false, "empty action"); };
 
    [[eosio::on_notify("amax.token::transfer")]]
    void onpaytransfer(const name& from, const name& to, const asset& quant, const string& memo);
