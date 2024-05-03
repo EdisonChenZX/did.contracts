@@ -23,8 +23,7 @@ namespace amax {
 
 using namespace std;
 
-
-void did_admin::ontransfer(const name& from, const name& to, const asset& quant, const string& memo) {
+void did_admin::onpaytransfer(const name& from, const name& to, const asset& quant, const string& memo) {
    if (from == get_self() || to != get_self()) return;
 
    auto bank = get_first_receiver();

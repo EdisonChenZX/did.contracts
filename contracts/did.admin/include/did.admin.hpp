@@ -43,7 +43,7 @@ class [[eosio::contract("did.admin")]] did_admin : public contract {
    ACTION null() { check(false, "null action"); };
 
    [[eosio::on_notify("amax.token::transfer")]]
-   void ontransfer(const name& from, const name& to, const asset& quant, const string& memo);
+   void onpaytransfer(const name& from, const name& to, const asset& quant, const string& memo);
 
 };
 } //namespace amax
