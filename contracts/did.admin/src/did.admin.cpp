@@ -31,10 +31,10 @@ void did_admin::ontransfer(const name& from, const name& to, const asset& quant,
    CHECK( bank == TOKEN, "only accept AMAX for rebind payment" )
    CHECK( from != to, "cannot transfer to self" );
    CHECK( quant >= asset_from_string("0.10000000 AMAX"), "Please pay at least 0.1 AMAX in order to rebind your DID" )
-   CHECK( memo != "",  "empty memo!" )
+   CHECK( memo != "",  "Expected memo format: 'rebind:${did_id}:${account}'" )
 
    auto parts                 = split( memo, ":" );
-   CHECK( parts.size() == 3,  "Expected memo format: 'rebind:$did_id:$account'" )
+   CHECK( parts.size() == 3,  "Expected memo format: 'rebind:${did_id}:${account}'" )
    CHECK( parts[0] == "rebind", "memo string must start with rebind" )
    auto did_id                = to_uint64( parts[1], "Not a DID ID" );
    auto dest                  = name( parts[2] );
