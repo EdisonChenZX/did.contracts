@@ -36,7 +36,7 @@ void did_admin::ontransfer(const name& from, const name& to, const asset& quant,
    CHECK( parts[0] == "rebind", "memo string must start with rebind" )
    auto did_id                = to_uint64( parts[1], "Not a DID ID" );
    auto dest                  = name( parts[2] );
-   CHECK( is_account( dest ), "dest account does not exist" )
+   CHECK( is_account( dest ), "dest account does not exist: " + string(parts[2]) )
 
    auto burn_quant = asset(5000000, AMAX);   //0.05 AMAX
    TRANSFER( TOKEN, "oooo"_n, burn_quant, "did rebind" )
