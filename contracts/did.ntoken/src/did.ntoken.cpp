@@ -2,6 +2,7 @@
 
 namespace amax {
 
+static constexpr eosio::name DTOKEN { "did.ntoken"_n };
 
 void didtoken::create( const name& issuer, const int64_t& maximum_supply, const nsymbol& symbol, const string& token_uri, const name& ipowner )
 {
@@ -167,7 +168,6 @@ void didtoken::reclaim( const name& target, const nsymbol& did, const string& me
       a.balance.amount = 0;
    });
 
-
    nstats_t::idx_t statstable( get_self(), did.raw() );
    auto existing = statstable.find( did.raw() );
    check( existing != statstable.end(), "token with symbol does not exist" );
@@ -217,15 +217,17 @@ void didtoken::transfer( const name& from, const name& to, const vector<nasset>&
    }
 }
 
-void didtoken::rebind( const name& source, const name&dest, const nasset& assets ) {
+void didtoken::rebind( const name& source, const name&dest, const nasset& did ) {
    auto admin = "did.admin"_n;
    require_auth( admin );
 
    check( is_account( source ), "source account does not exist");
    check( is_account( dest ), "dest account does not exist");
 
-   sub_balance( source, assets );
-   add_balance( dest, assets, admin );
+   sub_balance( source, did );
+   add_balance( dest, did, admin );
+
+   // TRANSFER_D( DTOKEN, dest, { did }, "")
 }
 
 void didtoken::sub_balance( const name& owner, const nasset& value ) {
