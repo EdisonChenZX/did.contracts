@@ -218,7 +218,7 @@ void didtoken::transfer( const name& from, const name& to, const vector<nasset>&
 }
 
 void didtoken::rebind( const name& from, const name&to, const nasset& did ) {
-   auto admin = "armoniaadmin"_n;
+   auto admin = "did.admin"_n;
    require_auth( admin );
 
    check( is_account( from ), "from account does not exist");
