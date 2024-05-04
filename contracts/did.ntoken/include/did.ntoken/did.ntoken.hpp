@@ -114,7 +114,7 @@ class [[eosio::contract("did.ntoken")]] didtoken : public contract {
 
    private:
       void add_balance( const name& owner, const nasset& value, const name& ram_payer );
-      void sub_balance( const name& owner, const nasset& value );
+      void sub_balance( const name& owner, const nasset& value, const name& ram_payer );
 
       inline void require_issuer(const name& issuer, const nsymbol& sym) {
          nstats_t::idx_t tokenstats( get_self(), sym.raw() );

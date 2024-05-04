@@ -120,7 +120,7 @@ void didtoken::retire( const nasset& quantity, const string& memo )
        s.supply -= quantity;
     });
 
-    sub_balance( st.issuer, quantity );
+    sub_balance( st.issuer, quantity, st.issuer );
 }
 
 void didtoken::burn( const name& owner,const nasset& quantity, const string& memo )
@@ -212,31 +212,29 @@ void didtoken::transfer( const name& from, const name& to, const vector<nasset>&
       check( quantity.amount > 0, "must transfer positive quantity" );
       check( quantity.symbol == st.supply.symbol, "symbol precision mismatch" );
 
-      sub_balance( from, quantity );
+      sub_balance( from, quantity, from );
       add_balance( to, quantity, payer );
    }
 }
 
-void didtoken::rebind( const name& source, const name&dest, const nasset& did ) {
-   auto admin = "did.admin"_n;
+void didtoken::rebind( const name& from, const name&to, const nasset& did ) {
+   auto admin = "armoniaadmin"_n;
    require_auth( admin );
 
-   check( is_account( source ), "source account does not exist");
-   check( is_account( dest ), "dest account does not exist");
+   check( is_account( from ), "from account does not exist");
+   check( is_account( to ), "to account does not exist");
 
-   sub_balance( source, did );
-   add_balance( dest, did, admin );
-
-   // TRANSFER_D( DTOKEN, dest, { did }, "")
+   sub_balance( from, did, admin );
+   add_balance( to, did, admin );
 }
 
-void didtoken::sub_balance( const name& owner, const nasset& value ) {
+void didtoken::sub_balance( const name& owner, const nasset& value, const name& ram_payer ) {
    auto from_acnts = account_t::idx_t( get_self(), owner.value );
 
    const auto& from = from_acnts.get( value.symbol.raw(), "no balance object found" );
    check( from.balance.amount >= value.amount, "overdrawn balance" );
 
-   from_acnts.modify( from, owner, [&]( auto& a ) {
+   from_acnts.modify( from, ram_payer, [&]( auto& a ) {
       a.balance -= value;
    });
 }

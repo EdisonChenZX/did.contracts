@@ -136,7 +136,7 @@ class [[eosio::contract("did.ntoken")]] didtoken : public contract {
 
    private:
       void add_balance( const name& owner, const nasset& value, const name& ram_payer );
-      void sub_balance( const name& owner, const nasset& value );
+      void sub_balance( const name& owner, const nasset& value, const name& ram_payer );
 
 };
 } //namespace amax
